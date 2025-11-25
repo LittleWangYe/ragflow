@@ -77,20 +77,20 @@ RUN --mount=type=cache,id=ragflow_apt,target=/var/cache/apt,sharing=locked \
     apt install -y nodejs
 
 # A modern version of cargo is needed for the latest version of the Rust compiler.
-RUN apt update && apt install -y curl build-essential \
-    && if [ "$NEED_MIRROR" == "1" ]; then \
-         # Use TUNA mirrors for rustup/rust dist files
-         export RUSTUP_DIST_SERVER="https://mirrors.tuna.tsinghua.edu.cn/rustup"; \
-         export RUSTUP_UPDATE_ROOT="https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup"; \
-         echo "Using TUNA mirrors for Rustup."; \
-       fi; \
-    # Force curl to use HTTP/1.1
-    curl --proto '=https' --tlsv1.2 --http1.1 -sSf https://sh.rustup.rs | bash -s -- -y --profile minimal \
-    && echo 'export PATH="/root/.cargo/bin:${PATH}"' >> /root/.bashrc
+# RUN apt update && apt install -y curl build-essential \
+#    && if [ "$NEED_MIRROR" == "1" ]; then \
+#         # Use TUNA mirrors for rustup/rust dist files
+#         export RUSTUP_DIST_SERVER="https://mirrors.tuna.tsinghua.edu.cn/rustup"; \
+#         export RUSTUP_UPDATE_ROOT="https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup"; \
+#         echo "Using TUNA mirrors for Rustup."; \
+#       fi; \
+#    # Force curl to use HTTP/1.1
+#    curl --proto '=https' --tlsv1.2 --http1.1 -sSf https://sh.rustup.rs | bash -s -- -y --profile minimal \
+#    && echo 'export PATH="/root/.cargo/bin:${PATH}"' >> /root/.bashrc
 
-ENV PATH="/root/.cargo/bin:${PATH}"
+#ENV PATH="/root/.cargo/bin:${PATH}"
 
-RUN cargo --version && rustc --version
+#RUN cargo --version && rustc --version
 
 # Add msssql ODBC driver
 # macOS ARM64 environment, install msodbcsql18.
