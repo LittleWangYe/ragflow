@@ -262,6 +262,7 @@ pages_dir = [
     Path(__file__).parent,
     Path(__file__).parent.parent / "api" / "apps",
     Path(__file__).parent.parent / "api" / "apps" / "sdk",
+    Path(__file__).parent.parent.parent / "deepinsight_extends" / "api",
 ]
 
 client_urls_prefix = [
