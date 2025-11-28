@@ -14,7 +14,7 @@ from api.db.services.llm_service import TenantLLMService
 from enum import Enum
 from common.time_utils import current_timestamp,datetime_format
 from api.utils.api_utils import generate_confirmation_token
-from deepinsight_extends.api.clients.chat_client import stream_chat
+from deepinsight_extends.api.clients.chat_client import stream_chat_async
 from deepinsight_extends.api.schemas.deepresearch import ArgOptionsGeneric, ChatRequest, EventType, LLMConfig, LLMSetting, Message, MessageContent, MessageContentType, ChatArgs, MessageToolCallContent, RetrievalArgs, StreamEvent, ConferencePPTGenRequest
 
 
@@ -127,24 +127,21 @@ def call_insight(request: ChatRequest, start_chat_time: float, authorization_key
     async def _async_run():
         progress_manager = ProgressManager(messages)
         
-        # Convert synchronous generator to async generator
-        async def stream_chat_async():
-            for event in stream_chat(request, authorization_key):
-                yield event
 
-        stream_iter = stream_chat_async()
+        stream_iter = stream_chat_async(request, authorization_key)
         stream_done = False
+        progress_done = False
         stream_task = asyncio.create_task(stream_iter.__anext__(), name="stream_event")
         progress_gen = progress_manager.run()
         progress_task = asyncio.create_task(progress_gen.__anext__(), name="progress_event")
         try:
             while True:
-                if stream_done and progress_manager.queue.empty():
+                if stream_done and progress_done:
                     break
                 
                 all_tasks = [t for t in [stream_task, progress_task] if not t.done()]
                 if not all_tasks:
-                    break
+                    continue
                 done, pending = await asyncio.wait(
                     all_tasks,
                     return_when=asyncio.FIRST_COMPLETED
@@ -155,8 +152,13 @@ def call_insight(request: ChatRequest, start_chat_time: float, authorization_key
                             stream_event = task.result()
                         except StopAsyncIteration:
                             stream_done = True
+                            if "process" in progress_message_ref:
+                                progress_message_ref["percentage"] = 100
+                                await progress_manager.enqueue(progress_message_ref)
+                            progress_manager.stop()
+                            if progress_task.done():
+                                progress_task = asyncio.create_task(progress_gen.__anext__(), name="progress_event")
                             continue
-                
                     
                         cur_expert_key = stream_event.messages[0].parent_message_id
                         cur_expert_key = cur_expert_key if cur_expert_key else EVENT_STATE_DEFAULT
@@ -193,18 +195,16 @@ def call_insight(request: ChatRequest, start_chat_time: float, authorization_key
                             stream_task = asyncio.create_task(stream_iter.__anext__(), name="stream_event")
                             
                     elif task.get_name() == "progress_event":
-                        _ = task.result()
+                        try:
+                            _ = task.result()
+                        except StopAsyncIteration:
+                            progress_done = True
+                            continue
                         yield _format_answer(messages=messages, start_chat_time=start_chat_time)
                         # 重新创建 progress_task
                         progress_task = asyncio.create_task(progress_gen.__anext__(), name="progress_event")
         finally:
-            if "process" in progress_message_ref:
-                progress_message_ref["percentage"] = 100
-                await progress_manager.enqueue(progress_message_ref)
-            progress_manager.stop()
-            # flush remaining progress updates
-            async for _ in progress_manager.flush_remaining():
-                yield _format_answer(messages=messages, start_chat_time=start_chat_time)
+            pass
         
         
     agen = _async_run()
@@ -704,6 +704,7 @@ def make_chat_request(dialog: Dialog, conversation:Conversation, messages: list[
         expert_review_enable=len(write_experts) < 2,
         allow_user_clarification=True if scene == "deep_research" else False,
         allow_edit_research_brief=True if scene == "deep_research" else False,
+        allow_edit_report_outline=False,
     )
     return request
 
