@@ -106,6 +106,10 @@ export default {
       doc: 'Docs',
       searchKnowledgePlaceholder: 'Search',
       noMoreData: `That's all. Nothing more.`,
+      paperNameHint:
+        "If 'paper' is selected, the name must be Conference+Year (e.g., SOSP+2025). The abbreviation can only contain `_` and `-`.",
+      nameValidationError:
+        'Invalid name format. It must be Conference+Year (e.g., SOSP+2025).',
     },
     knowledgeDetails: {
       localUpload: 'Local Upload',

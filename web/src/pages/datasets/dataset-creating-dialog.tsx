@@ -65,6 +65,17 @@ export function InputForm({ onOk }: IModalProps<any>) {
         });
       }
 
+      if (data.parseType === 1 && data.parser_id === 'paper') {
+        const regex = /^[a-zA-Z0-9_-]+\+\d{4}$/;
+        if (!regex.test(data.name)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: t('knowledgeList.nameValidationError'),
+            path: ['name'],
+          });
+        }
+      }
+
       console.log('form-data', data);
       // When parseType === 1, pipline_id required
       if (data.parseType === 2 && !data.pipeline_id) {
@@ -96,6 +107,11 @@ export function InputForm({ onOk }: IModalProps<any>) {
     name: 'parseType',
   });
 
+  const parserId = useWatch({
+    control: form.control,
+    name: 'parser_id',
+  });
+
   useEffect(() => {
     console.log('parseType', parseType);
     if (parseType === 1) {
@@ -125,6 +141,11 @@ export function InputForm({ onOk }: IModalProps<any>) {
                   {...field}
                 />
               </FormControl>
+              {parseType === 1 && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  {t('knowledgeList.paperNameHint')}
+                </div>
+              )}
               <FormMessage />
             </FormItem>
           )}
