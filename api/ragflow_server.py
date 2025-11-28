@@ -147,7 +147,8 @@ if __name__ == '__main__':
         app.config["MAIL_PASSWORD"] = settings.MAIL_PASSWORD
         app.config["MAIL_DEFAULT_SENDER"] = settings.MAIL_DEFAULT_SENDER
         smtp_mail_server.init_app(app)
-
+    app.config["BODY_TIMEOUT"] = 3600
+    app.config["RESPONSE_TIMEOUT"] = 3600
 
     # start http server
     try:
