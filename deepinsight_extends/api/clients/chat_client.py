@@ -1,6 +1,7 @@
 import json
 import os
 import requests
+import aiohttp
 from typing import Any, Dict, Generator, Optional
 from pydantic import ValidationError
 from deepinsight_extends.api.schemas.deepresearch import ChatRequest, EventType, StreamEvent
@@ -18,6 +19,18 @@ def stream_chat(request: ChatRequest, authorization_key: Optional[str] = None)->
         for line in response.iter_lines(decode_unicode=True):
             if line and line.strip():
                 yield parse_stream(line=line)
+
+async def stream_chat_async(request: ChatRequest, authorization_key: Optional[str] = None):
+    headers = {}
+    if authorization_key:
+        headers["Ragflow-Authorization"] = authorization_key
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(API_URL, json=request.model_dump(), headers=headers) as resp:
+            async for raw_line in resp.content:
+                line = raw_line.decode()
+                if line.strip():
+                    yield parse_stream(line)
 
 def parse_stream(line:str)->StreamEvent:
     if line.startswith("data:"):
