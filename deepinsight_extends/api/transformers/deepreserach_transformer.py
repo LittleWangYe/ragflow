@@ -653,7 +653,7 @@ def make_chat_request(dialog: Dialog, conversation:Conversation, messages: list[
         
     # Rag retrieval config
     rag_retrieval_config = None
-    if "rag_retrival" in search_types:        
+    if "rag_retrieval" in search_types:        
         kbs = sources[SearchType.KNOWLEADGE.value]
         if not kbs:
             raise Exception(
@@ -709,7 +709,7 @@ def make_chat_request(dialog: Dialog, conversation:Conversation, messages: list[
     return request
 
 def get_or_generate_authorization_key(dialog: Dialog, request: ChatRequest):
-    if not request.search_type or "rag_retrival" not in request.search_type:
+    if not request.search_type or "rag_retrieval" not in request.search_type:
         return None
     tenant_id = dialog.tenant_id
     # First find has generate api key
@@ -718,15 +718,15 @@ def get_or_generate_authorization_key(dialog: Dialog, request: ChatRequest):
     if len(objs) > 0:
         o = objs[0]
         if not o["beta"]:
-            o["beta"] = generate_confirmation_token(generate_confirmation_token(tenant_id)).replace("ragflow-", "")[:32]
+            o["beta"] = generate_confirmation_token().replace("ragflow-", "")[:32]
             APITokenService.filter_update([APIToken.tenant_id == tenant_id, APIToken.token == o["token"]], o)
         return o["token"]
-         
-    token = generate_confirmation_token(tenant_id)
+
+    token = generate_confirmation_token()
     obj = {
         "tenant_id": tenant_id,
         "token": token,
-        "beta": generate_confirmation_token(generate_confirmation_token(tenant_id)).replace("ragflow-", "")[:32],
+        "beta": generate_confirmation_token().replace("ragflow-", "")[:32],
         "create_time": current_timestamp(),
         "create_date": datetime_format(datetime.now()),
         "update_time": None,
