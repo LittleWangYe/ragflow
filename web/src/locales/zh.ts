@@ -99,6 +99,9 @@ export default {
       doc: '文档',
       searchKnowledgePlaceholder: '搜索',
       noMoreData: '没有更多数据了',
+      paperNameHint:
+        '如果内置选择了paper，则名称必须为会议缩写+年份，如：SOSP+2025，缩写只能包含_-两种特殊字符',
+      nameValidationError: '名称格式错误，必须为会议缩写+年份，如：SOSP+2025',
     },
     knowledgeDetails: {
       localUpload: '本地上传',
