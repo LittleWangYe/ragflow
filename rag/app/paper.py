@@ -24,6 +24,8 @@ from rag.nlp import rag_tokenizer, tokenize, tokenize_table, add_positions, bull
 from deepdoc.parser import PdfParser, PlainParser
 import numpy as np
 
+from deepinsight_extends.api.clients.parser_client import MockParser, parse_paper_deepinsight
+
 class Pdf(PdfParser):
     def __init__(self):
         self.model_speciess = ParserType.PAPER.value
@@ -156,13 +158,19 @@ def chunk(filename, binary=None, from_page=0, to_page=100000,
                 "sections": pdf_parser(filename if not binary else binary, from_page=from_page, to_page=to_page)[0],
                 "tables": []
             }
+        elif (kwargs.get("parser_config", {}).get("layout_recognize") or
+              kwargs.get("kb_parser_config", {}).get("layout_recognize")) == "MinerU":
+            pdf_parser = MockParser()
+            paper = parse_paper_deepinsight(kwargs["kb_id"], tenant_id=kwargs["tenant_id"],
+                                            filename=filename, binary=binary,
+                                            from_page=from_page, to_page=to_page, callback=callback)
         else:
             pdf_parser = Pdf()
             paper = pdf_parser(filename if not binary else binary,
                                from_page=from_page, to_page=to_page, callback=callback)
-        tbls=paper["tables"]
-        tbls=vision_figure_parser_pdf_wrapper(tbls=tbls,callback=callback,**kwargs)
-        paper["tables"] = tbls
+            tbls=paper["tables"]
+            tbls=vision_figure_parser_pdf_wrapper(tbls=tbls,callback=callback,**kwargs)
+            paper["tables"] = tbls
     else:
         raise NotImplementedError("file type not supported yet(pdf supported)")
 
