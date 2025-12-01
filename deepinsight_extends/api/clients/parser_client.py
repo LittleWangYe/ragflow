@@ -102,7 +102,7 @@ def parse_paper_deepinsight(kb_id: str,
     )
 
 def _get_or_create_conference_id(kb_id: str, kb_name: str, callback: Callable[[float, str], None]) -> int:
-    response = requests.get(GET_CONF_URL, params=dict(kb_id=kb_id, kb_name=kb_name))
+    response = requests.post(GET_CONF_URL, json=dict(kb_id=kb_id, kb_name=kb_name))
     if response.status_code != 200:
         logging.error(f"DeepInsight failed to find a conference with status={response.status_code}: "
                       f"{response.content.decode('utf8')}")
@@ -122,38 +122,33 @@ def _mute_callback(*args):
 
 def _log_parse_result(body: _PaperMeta, callback: Callable[[float, str], None]) -> None:
     if callback is not _mute_callback:
-        # language=html
-        msgs = [" Paper information:<br>\n",
-                f"<strong>Title:</strong> {html.escape(body['title'])}<br>\n"
-                f"<strong>Abstract: </strong>{html.escape(body['abstract'])}<br>\n"]
+        msgs = [" Paper information:",
+                f"Title: {html.escape(body['title'])}",
+                f"Abstract: {html.escape(body['abstract'])}"]
         authors = body["author_info"]
         first_author = [authors["first_author"]] if authors.get("first_author") else []
         all_authors = (first_author + authors.get("co_first_authors", []) + authors.get("middle_authors", []) +
                        authors.get("last_authors", []))
         corresponding = authors.get("corresponding_authors") or []
         if not (all_authors or corresponding):
-            # language=html
-            msgs.append("<strong>Authors:</strong> no info.<br>\n")
+            msgs.append("Authors: no info.")
         else:
-            # language=html
-            msgs.append('<strong>Authors:</strong><br><table border="1"><thead>'
-                        "<tr><th>Name</th><th>Email</th><th>Affiliation</th><th>Corresponding</th></tr>"
-                        "</thead><tbody>\n")
+            msgs.append("Authors:")
             for author in all_authors:
                 msgs.append(_author_html(author, False))
             for author in corresponding:
                 msgs.append(_author_html(author, True))
-            # language=html
-            msgs.append("</tbody></table>")
-        extra_msg = "".join(msgs)
+        extra_msg = "\n".join(msgs)
     else:
         extra_msg = ""
     callback(0.8, "End to parse this paper with DeepInsight paper parse service." + extra_msg)
 
 
-
 def _author_html(author: dict, corresponding_flag: bool) -> str:
-    corresponding = "Corresponding" if corresponding_flag else ""
-    name, email, affiliation = [html.escape(author.get(k) or "-") for k in ("name", "email", "affiliation")]
-    # language=html
-    return f"<tr><td>{name}</td><td>{email}</td><td>{affiliation}</td><td>{corresponding}</td></tr>\n"
+    name = author.get("name") or "[anonymous]"
+    extra = [author.get(k) for k in ("email", "affiliation") if author.get(k)]
+    if corresponding_flag:
+        extra.append("Corresponding")
+    if extra:
+        return f"- {name} ({', '.join(extra)})"
+    return f"- {name}"
