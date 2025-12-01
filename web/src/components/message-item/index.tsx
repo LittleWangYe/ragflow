@@ -102,7 +102,13 @@ const MessageItem = ({
               <AssistantIcon />
             ))}
 
-          <Flex vertical gap={8} flex={1}>
+          <Flex
+            vertical
+            gap={8}
+            flex={isAssistant ? 1 : 'none'}
+            style={{ minWidth: 0 }}
+            align={isAssistant ? 'flex-start' : 'flex-end'}
+          >
             <Space>
               {isAssistant ? (
                 index !== 0 && (
@@ -143,6 +149,9 @@ const MessageItem = ({
                 loading={loading}
                 content={item.content}
                 reference={reference}
+                progressSteps={item.data?.progressSteps}
+                progress={isAssistant ? (item.data?.progress ?? 0) : 0}
+                elapsedTime={item.data?.elapsedTime}
                 clickDocumentButton={clickDocumentButton}
               ></MarkdownContent>
             </div>

@@ -52,11 +52,12 @@ export default function ChatList() {
       </div>
       <div className="flex-1 overflow-auto">
         <CardContainer className="max-h-[calc(100dvh-280px)] overflow-auto px-8">
-          {data.dialogs.map((x) => {
+          {data.dialogs.map((x, index) => {
             return (
               <ChatCard
                 key={x.id}
                 data={x}
+                index={index}
                 showChatRenameModal={showChatRenameModal}
               ></ChatCard>
             );

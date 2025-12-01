@@ -136,6 +136,39 @@ export interface IAnswer {
   audio_binary?: string;
   data?: any;
   chatBoxId?: string;
+  // For deepinsight conference question format
+  answerArray?: AnswerItem[];
+  thinkingContent?: string;
+  // Progress tracking for deepinsightConferenceQuestion
+  progress?: number; // 当前进度百分比（0-100）
+  startTime?: number; // 开始时间戳（毫秒）
+  elapsedTime?: number; // 已耗时（毫秒）
+  progressSteps?: ProgressStep[]; // 进度步骤
+  // Tool calls from deepinsight
+  toolCalls?: Array<{
+    name: string;
+    id: string;
+    index?: number;
+    args?: Record<string, any>;
+    result?: any[];
+  }>;
+}
+
+export interface ProgressStep {
+  type: string; // 步骤类型，如 thinking_step_outline, expert_review_step_generating
+  content: string; // 步骤描述
+  percentage: number; // 进度百分比
+  create_time: number; // 创建时间戳
+}
+
+export interface AnswerItem {
+  process: string; // e.g., "think", "answer", "progress"
+  type: string; // e.g., "content_markdown", "interrupt_clarification", "thinking_step_*", "expert_review_*"
+  content: string | any; // 内容：纯文本或结构化数据
+  message_id: string;
+  parent_message_id?: string;
+  create_time: number;
+  percentage?: number; // 进度百分比（0-100）
 }
 
 export interface Docagg {

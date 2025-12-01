@@ -47,7 +47,8 @@ export default defineConfig({
     },
     {
       context: ['/api', '/v1'],
-      target: 'http://127.0.0.1:9380/',
+      //113.106.163.66:43002   127.0.0.1:9380
+      target: 'http://113.106.163.66:43002/',
       changeOrigin: true,
       ws: true,
       logger: console,
