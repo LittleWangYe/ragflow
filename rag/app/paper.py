@@ -160,8 +160,8 @@ def chunk(filename, binary=None, from_page=0, to_page=100000,
             }
         elif (kwargs.get("parser_config", {}).get("layout_recognize") or
               kwargs.get("kb_parser_config", {}).get("layout_recognize")) == "MinerU":
-            pdf_parser = MockParser()
-            paper = parse_paper_deepinsight(kwargs["kb_id"], tenant_id=kwargs["tenant_id"],
+            pdf_parser = None
+            paper = parse_paper_deepinsight(kwargs["kb_id"],
                                             filename=filename, binary=binary,
                                             from_page=from_page, to_page=to_page, callback=callback)
         else:
@@ -184,7 +184,7 @@ def chunk(filename, binary=None, from_page=0, to_page=100000,
 
     res = tokenize_table(paper["tables"], doc, eng)
 
-    if paper["abstract"]:
+    if paper["abstract"] and pdf_parser:
         d = copy.deepcopy(doc)
         txt = pdf_parser.remove_tag(paper["abstract"])
         d["important_kwd"] = ["abstract", "总结", "概括", "summary", "summarize"]
@@ -202,23 +202,42 @@ def chunk(filename, binary=None, from_page=0, to_page=100000,
     most_level, levels = title_frequency(bull, sorted_sections)
     assert len(sorted_sections) == len(levels)
     sec_ids = []
-    sid = 0
-    for i, lvl in enumerate(levels):
-        if lvl <= most_level and i > 0 and lvl != levels[i - 1]:
-            sid += 1
-        sec_ids.append(sid)
-        logging.debug("{} {} {} {}".format(lvl, sorted_sections[i][0], most_level, sid))
 
-    chunks = []
-    last_sid = -2
-    for (txt, _), sec_id in zip(sorted_sections, sec_ids):
-        if sec_id == last_sid:
-            if chunks:
-                chunks[-1] += "\n" + txt
-                continue
-        chunks.append(txt)
-        last_sid = sec_id
-    res.extend(tokenize_chunks(chunks, doc, eng, pdf_parser))
+    source_min_length = 15
+    target_min_length = 3
+    last_combined: list | None = None
+    for over_combine_offset in range(3):
+        sec_ids.clear()
+        sid = 0
+        for i, lvl in enumerate(levels):
+            if lvl < (most_level + over_combine_offset):
+                sid += 1
+            sec_ids.append(sid)
+        if (len(sorted_sections) >= source_min_length) and (sid < target_min_length):
+            continue
+        chunks = []
+        last_sid = -2
+        for (txt, _), sec_id in zip(sorted_sections, sec_ids):
+            if sec_id == last_sid:
+                if chunks:
+                    chunks[-1] += "\n" + txt
+                    continue
+            chunks.append(txt)
+            last_sid = sec_id
+
+        if last_combined == chunks:
+            logging.info("Last tokenize failed. And another combination try got a same result. "
+                         "Retry with another combination policy.")
+            continue
+        try:
+            res.extend(tokenize_chunks(chunks, doc, eng, pdf_parser))
+            return res
+        except Exception as e:
+            last_combined = chunks
+            logging.error(f"Tokenize fail with a {type(e).__name__}. May because of a too long chunk. Retry now: {e}",
+                          exc_info=True)
+    # always fail. return without combination.
+    res.extend(tokenize_chunks([s[0] for s in sorted_sections], doc, eng, pdf_parser))
     return res
 
 
