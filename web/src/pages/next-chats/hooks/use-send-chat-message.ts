@@ -11,12 +11,12 @@ import {
   useGetChatSearchParams,
 } from '@/hooks/use-chat-request';
 import { Message } from '@/interfaces/database/chat';
-import api from '@/utils/api';
 import { trim } from 'lodash';
 import { useCallback, useEffect } from 'react';
 import { useParams } from 'umi';
 import { v4 as uuid } from 'uuid';
 import { IMessage } from '../chat/interface';
+import useConversationApi from './use-conversation-api';
 import { useFindPrologueFromDialogList } from './use-select-conversation-list';
 import { useSetChatRouteParams } from './use-set-chat-route';
 import { useSetConversation } from './use-set-conversation';
@@ -90,9 +90,8 @@ export const useSendMessage = (controller: AbortController) => {
   const { handleUploadFile, fileIds, clearFileIds, isUploading, removeFile } =
     useUploadFile();
 
-  const { send, answer, done } = useSendMessageWithSse(
-    api.completeConversation,
-  );
+  const url = useConversationApi();
+  const { send, answer, done } = useSendMessageWithSse(url);
   const {
     scrollRef,
     messageContainerRef,

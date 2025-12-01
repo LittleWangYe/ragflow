@@ -1,4 +1,39 @@
 .markdownContentWrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  word-wrap: break-word;
+  word-break: break-word;
+  box-sizing: border-box;
+
+  :global(img) {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  :global(table) {
+    width: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+    overflow-x: auto;
+    display: block;
+  }
+
+  :global(pre) {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    display: block;
+    margin: 8px 0;
+    box-sizing: border-box;
+  }
+
+  :global(code) {
+    word-break: break-all;
+    overflow-wrap: break-word;
+  }
+
   :global(section.think) {
     padding-left: 10px;
     color: #8b8b8b;
@@ -6,9 +41,71 @@
     margin-bottom: 10px;
     font-size: 12px;
   }
+
   :global(blockquote) {
     padding-left: 10px;
     border-left: 4px solid #ccc;
+  }
+}
+
+.thinkingSection {
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: #fafafa;
+  border-radius: 4px;
+  border-left: 3px solid #d5d3d3;
+}
+
+.thinkingHeader {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  user-select: none;
+  padding: 8px 0;
+  display: inline-block;
+
+  &:hover {
+    color: #1890ff;
+  }
+}
+
+.thinkingContent {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.toolCallsFlexWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.toolCallContainer {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.progressTip {
+  margin: 12px 0;
+  padding: 12px;
+  background-color: #fafafa;
+  border-left: 3px solid #faad14;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.6;
+
+  :global(.ant-tag) {
+    margin-right: 8px;
+    margin-bottom: 8px;
   }
 }
 

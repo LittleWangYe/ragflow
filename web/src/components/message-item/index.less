@@ -2,13 +2,20 @@
   padding: 24px 0;
   .messageItemSection {
     display: inline-block;
+    width: fit-content;
+    max-width: 100%;
   }
   .messageItemSectionLeft {
-    width: 80%;
+    width: fit-content;
+    max-width: 100%;
   }
   .messageItemContent {
-    display: inline-flex;
+    display: flex;
     gap: 20px;
+    width: fit-content;
+    max-width: 100%;
+    align-items: flex-start;
+    box-sizing: border-box;
   }
   .messageItemContentReverse {
     flex-direction: row-reverse;
@@ -26,11 +33,17 @@
     .messageTextBase();
     // background-color: #e6f4ff;
     word-break: break-word;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   .messageTextDark {
     .chunkText();
     .messageTextBase();
     word-break: break-word;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     :global(section.think) {
       color: rgb(166, 166, 166);
       border-left-color: rgb(78, 78, 86);
@@ -43,6 +56,9 @@
     background-color: rgba(255, 255, 255, 0.3);
     word-break: break-word;
     text-align: justify;
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   .messageEmpty {
     width: 300px;
@@ -51,10 +67,19 @@
   .thumbnailImg {
     max-width: 20px;
   }
+
+  .toolCallsContainer {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
 }
 
 .messageItemLeft {
   text-align: left;
+  .messageItemContent {
+    width: 100%;
+  }
 }
 
 .messageItemRight {

@@ -6,13 +6,13 @@ import {
 } from '@/hooks/logic-hooks';
 import { useGetChatSearchParams } from '@/hooks/use-chat-request';
 import { IAnswer, Message } from '@/interfaces/database/chat';
-import api from '@/utils/api';
 import { buildMessageUuid } from '@/utils/chat';
 import { trim } from 'lodash';
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 import { IMessage } from '../chat/interface';
 import { useBuildFormRefs } from './use-build-form-refs';
+import useConversationApi from './use-conversation-api';
 import { useUploadFile } from './use-upload-file';
 
 export function useSendMultipleChatMessage(
@@ -26,9 +26,10 @@ export function useSendMultipleChatMessage(
   const { conversationId } = useGetChatSearchParams();
 
   const { handleInputChange, value, setValue } = useHandleMessageInputChange();
-  const { send, answer, allDone } = useSendMessageWithSse(
-    api.completeConversation,
-  );
+  // 根据路由参数选择会话接口
+  const url = useConversationApi();
+
+  const { send, answer, allDone } = useSendMessageWithSse(url);
 
   const { handleUploadFile, fileIds, clearFileIds } = useUploadFile();
 

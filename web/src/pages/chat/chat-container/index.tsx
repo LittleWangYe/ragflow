@@ -64,7 +64,7 @@ const ChatContainer = ({ controller }: IProps) => {
           className={styles.messageContainer}
           ref={messageContainerRef}
         >
-          <div>
+          <div style={{ width: '100%', boxSizing: 'border-box' }}>
             <Spin spinning={loading}>
               {derivedMessages?.map((message, i) => {
                 return (
