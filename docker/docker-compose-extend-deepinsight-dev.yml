@@ -8,7 +8,7 @@ services:
         condition: service_healthy
     profiles:
       - cpu
-    image: infiniflow/ragflow:nightly 
+    image: infiniflow/ragflow:nightly
     # Example configuration to set up an MCP server:
     # command:
     #   - --enable-mcpserver
@@ -90,7 +90,6 @@ services:
     ports:
       - "9388:8888"
     env_file: .env
-    # entrypoint: sh -c 'export PYTHONPATH=/deepInsight:$PYTHONPATH && cd /deepInsight &&  python deepinsight/api/app.py'
     volumes:
       - deepinsight_data:/deepinsight/data
       - deepinsight_charts:/deepinsight/charts
