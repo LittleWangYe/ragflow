@@ -22,6 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import { isEmpty } from 'lodash';
 import { ArrowUpRight, LogOut, Send } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'umi';
 import { useHandleClickConversationCard } from '../hooks/use-click-card';
@@ -42,7 +43,7 @@ export default function Chat() {
   const { handleConversationCardClick, controller, stopOutputMessage } =
     useHandleClickConversationCard();
   const { visible: settingVisible, switchVisible: switchSettingVisible } =
-    useSetModalState(true);
+    useSetModalState(false);
   const {
     removeChatBox,
     addChatBox,
@@ -55,6 +56,11 @@ export default function Chat() {
     useShowEmbedModal();
 
   const { conversationId, isNew } = useGetChatSearchParams();
+  const searchParams = new URLSearchParams(window.location.search);
+  const conversationApi = searchParams.get('conversationApi') || '';
+  const isDeepinsightMode = conversationApi === 'deepinsightChat';
+  const [thinkingPanelVisible, setThinkingPanelVisible] =
+    useState(isDeepinsightMode);
 
   const { isDebugMode, switchDebugMode } = useSwitchDebugMode();
 
@@ -106,6 +112,11 @@ export default function Chat() {
           hasSingleChatBox={hasSingleChatBox}
           handleConversationCardClick={handleConversationCardClick}
           switchSettingVisible={switchSettingVisible}
+          isDeepinsightMode={isDeepinsightMode}
+          thinkingPanelVisible={thinkingPanelVisible}
+          onToggleThinkingPanel={() =>
+            setThinkingPanelVisible(!thinkingPanelVisible)
+          }
         ></Sessions>
 
         <Card className="flex-1 min-w-0 bg-transparent border h-full">
@@ -133,6 +144,9 @@ export default function Chat() {
                 <SingleChatBox
                   controller={controller}
                   stopOutputMessage={stopOutputMessage}
+                  thinkingPanelVisible={
+                    isDeepinsightMode ? thinkingPanelVisible : true
+                  }
                 ></SingleChatBox>
               </CardContent>
             </Card>

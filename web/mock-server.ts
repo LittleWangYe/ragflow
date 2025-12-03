@@ -179,94 +179,87 @@ app.post(
 
 /**
  * Mock deepinsightChat 接口
- * 返回简单的流式响应
+ * 读取本地 response_chat.txt 文件并流式返回
  */
 app.post('/api/deepinsight/chat', (req: Request, res: Response) => {
-  try {
-    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
+  console.log('📡 DeepInsight Chat 请求开始...');
 
-    const mockData = [
-      {
-        code: 0,
-        message: '',
-        data: {
-          id: 'msg_chat_001',
-          session_id: 'conv_chat_123',
-          answer: [
-            {
-              process: 'think',
-              type: 'content_markdown',
-              content: '正在分析您的问题...',
-              message_id: 'msg_chat_001',
-              create_time: Date.now() / 1000,
-            },
-          ],
-          reference: { chunks: [] },
-        },
-      },
-      {
-        code: 0,
-        message: '',
-        data: {
-          id: 'msg_chat_001',
-          session_id: 'conv_chat_123',
-          answer: [
-            {
-              process: 'think',
-              type: 'content_markdown',
-              content: '正在分析您的问题... (深度研究中)',
-              message_id: 'msg_chat_001',
-              create_time: Date.now() / 1000,
-            },
-          ],
-          reference: { chunks: [] },
-        },
-      },
-      {
-        code: 0,
-        message: '',
-        data: {
-          id: 'msg_chat_001',
-          session_id: 'conv_chat_123',
-          answer: [
-            {
-              process: '',
-              type: 'content_markdown',
-              content: '# 分析结果\n\n这是一个深度研究的回答示例。',
-              message_id: 'msg_chat_001',
-              create_time: Date.now() / 1000,
-            },
-          ],
-          reference: { chunks: [] },
-        },
-      },
-    ];
+  // 使用相对于当前工作目录的路径（项目根目录）
+  const responseFile = path.resolve(process.cwd(), 'response_chat.txt');
 
-    let index = 0;
-    const interval = setInterval(() => {
-      if (index < mockData.length) {
-        res.write(`data:${JSON.stringify(mockData[index])}\n\n`);
-        index++;
-      } else {
-        res.write(`data:{"code": 0, "message": "", "data": true}\n\n`);
-        clearInterval(interval);
-        res.end();
-      }
-    }, 200);
-
-    req.on('close', () => {
-      clearInterval(interval);
-    });
-  } catch (error) {
-    console.error('Error in chat endpoint:', error);
-    res.status(500).json({
-      code: 500,
-      message: 'Internal server error',
+  // 检查文件是否存在
+  if (!fs.existsSync(responseFile)) {
+    console.error(`❌ File not found: ${responseFile}`);
+    return res.status(404).json({
+      code: 404,
+      message: `Response file not found: ${responseFile}`,
       data: null,
     });
+  }
+
+  try {
+    // 使用 writeHead 设置响应头
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'X-Accel-Buffering': 'no',
+    });
+
+    // 读取文件内容
+    const fileContent = fs.readFileSync(responseFile, 'utf-8');
+    const lines = fileContent
+      .split('\n')
+      .filter((line) => line.trim().length > 0);
+
+    console.log(`✅ 文件读取成功，共 ${lines.length} 行`);
+
+    let lineIndex = 0;
+    let sentCount = 0;
+
+    // 递归发送，每行之间有很小的延迟以防止阻塞
+    const sendNext = () => {
+      if (lineIndex < lines.length && !res.writableEnded) {
+        const line = lines[lineIndex];
+        res.write(`${line}\n\n`);
+        sentCount++;
+
+        if (sentCount % 100 === 0) {
+          console.log(`📤 已发送 ${sentCount}/${lines.length} 行数据`);
+        }
+
+        lineIndex++;
+
+        // 使用 setImmediate 继续发送下一行，不阻塞事件循环
+        setImmediate(sendNext);
+      } else if (!res.writableEnded) {
+        // 所有数据发送完成
+        console.log(`✅ 全部 ${sentCount} 行数据发送完成`);
+        res.end();
+      }
+    };
+
+    // 立即开始发送第一行
+    sendNext();
+
+    // 客户端断开连接时清理
+    req.on('close', () => {
+      console.log(`❌ 客户端断开连接，已发送 ${sentCount} 行`);
+    });
+
+    req.on('error', (err: any) => {
+      console.error('❌ 流错误:', err);
+    });
+  } catch (error) {
+    console.error('❌ Error reading response file:', error);
+    if (!res.writableEnded) {
+      res.status(500).json({
+        code: 500,
+        message: 'Internal server error',
+        data: null,
+      });
+    }
   }
 });
 

@@ -32,6 +32,7 @@ interface IProps extends Partial<IRemoveMessageById>, IRegenerateMessage {
   index: number;
   showLikeButton?: boolean;
   showLoudspeaker?: boolean;
+  isDeepinsightChat?: boolean;
 }
 
 const MessageItem = ({
@@ -48,6 +49,7 @@ const MessageItem = ({
   showLikeButton = true,
   showLoudspeaker = true,
   visibleAvatar = true,
+  isDeepinsightChat = false,
 }: IProps) => {
   const { theme } = useTheme();
   const isAssistant = item.role === MessageType.Assistant;
@@ -55,6 +57,30 @@ const MessageItem = ({
   const { data: documentList, setDocumentIds } = useFetchDocumentInfosByIds();
   const { data: documentThumbnails, setDocumentIds: setIds } =
     useFetchDocumentThumbnailsByIds();
+
+  // Helper function to filter out result type items in deepinsightChat mode
+  const filterResultContent = (content: any): any => {
+    if (!isDeepinsightChat) {
+      return content;
+    }
+
+    if (typeof content === 'string') {
+      // Remove <result>...</result> tags from string content
+      return content.replace(/<result>[\s\S]*?<\/result>/gi, '').trim();
+    }
+
+    if (Array.isArray(content)) {
+      // Only keep items with process==='' (empty string) AND type!=='result'
+      return content.filter((item: any) => {
+        if (!item) return true;
+        const isEmptyProcess = item.process === '';
+        const isResultType = item.type === 'result';
+        return isEmptyProcess && !isResultType;
+      });
+    }
+
+    return content;
+  };
 
   const referenceDocumentList = useMemo(() => {
     return reference?.doc_aggs ?? [];
@@ -147,7 +173,7 @@ const MessageItem = ({
             >
               <MarkdownContent
                 loading={loading}
-                content={item.content}
+                content={filterResultContent(item.content)}
                 reference={reference}
                 progressSteps={item.data?.progressSteps}
                 progress={isAssistant ? (item.data?.progress ?? 0) : 0}

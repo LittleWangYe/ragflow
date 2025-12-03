@@ -19,11 +19,21 @@ import { ConversationDropdown } from './conversation-dropdown';
 type SessionProps = Pick<
   ReturnType<typeof useHandleClickConversationCard>,
   'handleConversationCardClick'
-> & { switchSettingVisible(): void; hasSingleChatBox: boolean };
+> & {
+  switchSettingVisible(): void;
+  hasSingleChatBox: boolean;
+  thinkingPanelVisible?: boolean;
+  onToggleThinkingPanel?: () => void;
+  isDeepinsightMode?: boolean;
+};
+
 export function Sessions({
   hasSingleChatBox,
   handleConversationCardClick,
   switchSettingVisible,
+  thinkingPanelVisible = true,
+  onToggleThinkingPanel,
+  isDeepinsightMode = false,
 }: SessionProps) {
   const { t } = useTranslation();
   const {
@@ -104,15 +114,26 @@ export function Sessions({
           </Card>
         ))}
       </div>
-      <div className="py-2">
-        <Button
-          className="w-full"
-          onClick={switchSettingVisible}
-          disabled={!hasSingleChatBox}
-          variant={'outline'}
-        >
-          {t('chat.chatSetting')}
-        </Button>
+      <div className="space-y-2 py-2">
+        {isDeepinsightMode && onToggleThinkingPanel && (
+          <Button
+            className="w-full"
+            onClick={onToggleThinkingPanel}
+            variant={'outline'}
+          >
+            {thinkingPanelVisible ? '隐藏思考面板' : '显示思考面板'}
+          </Button>
+        )}
+        {!isDeepinsightMode && (
+          <Button
+            className="w-full"
+            onClick={switchSettingVisible}
+            disabled={!hasSingleChatBox}
+            variant={'outline'}
+          >
+            {t('chat.chatSetting')}
+          </Button>
+        )}
       </div>
     </section>
   );

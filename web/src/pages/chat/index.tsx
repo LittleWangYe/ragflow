@@ -356,7 +356,10 @@ const Chat = () => {
         </Flex>
       </Flex>
       <Divider type={'vertical'} className={styles.divider}></Divider>
-      <ChatContainer controller={controller}></ChatContainer>
+      <ChatContainer
+        controller={controller}
+        settingsPanelOpen={dialogEditVisible}
+      ></ChatContainer>
       {dialogEditVisible && (
         <ChatConfigurationModal
           visible={dialogEditVisible}

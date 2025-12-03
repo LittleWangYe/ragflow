@@ -182,7 +182,8 @@ const MarkdownContent = ({
     (text: string) => {
       let processed = DOMPurify.sanitize(text, {
         ADD_TAGS: ['think', 'section'],
-        ADD_ATTR: ['class'],
+        ADD_ATTR: ['class', 'href', 'title', 'alt', 'src'],
+        ALLOW_DATA_ATTR: false,
       });
 
       if (processed === '') {
@@ -510,6 +511,54 @@ const MarkdownContent = ({
                         </code>
                       );
                     },
+                    a: (props: any) => (
+                      <a
+                        {...props}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: '#1890ff',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                          ...props.style,
+                        }}
+                      >
+                        {props.children}
+                      </a>
+                    ),
+                    h1: (props: any) => (
+                      <h1
+                        style={{
+                          marginTop: '16px',
+                          marginBottom: '8px',
+                          ...props.style,
+                        }}
+                      >
+                        {props.children}
+                      </h1>
+                    ),
+                    h2: (props: any) => (
+                      <h2
+                        style={{
+                          marginTop: '12px',
+                          marginBottom: '8px',
+                          ...props.style,
+                        }}
+                      >
+                        {props.children}
+                      </h2>
+                    ),
+                    h3: (props: any) => (
+                      <h3
+                        style={{
+                          marginTop: '8px',
+                          marginBottom: '6px',
+                          ...props.style,
+                        }}
+                      >
+                        {props.children}
+                      </h3>
+                    ),
                   } as any
                 }
               >

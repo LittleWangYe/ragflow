@@ -89,7 +89,7 @@ export interface IConversation {
 }
 
 export interface Message {
-  content: string;
+  content: string | AnswerItem[];
   role: MessageType;
   doc_ids?: string[];
   prompt?: string;
@@ -169,6 +169,8 @@ export interface AnswerItem {
   parent_message_id?: string;
   create_time: number;
   percentage?: number; // 进度百分比（0-100）
+  children?: AnswerItem[]; // 嵌套的 AnswerItem
+  answer?: AnswerItem[]; // 嵌套的答案数组
 }
 
 export interface Docagg {

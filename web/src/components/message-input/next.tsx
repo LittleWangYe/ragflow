@@ -1,5 +1,6 @@
 'use client';
 
+import { DeepinsightKbSelector } from '@/components/deepinsight-kb-selector';
 import {
   FileUpload,
   FileUploadDropzone,
@@ -30,6 +31,10 @@ interface IProps {
   isShared?: boolean;
   showUploadIcon?: boolean;
   isUploading?: boolean;
+  showAttachmentButton?: boolean;
+  isDeepinsightMode?: boolean;
+  selectedKbs?: string[];
+  onKbChange?: (kbIds: string[]) => void;
   onPressEnter(...prams: any[]): void;
   onInputChange: React.ChangeEventHandler<HTMLTextAreaElement>;
   createConversationBeforeUploadDocument?(message: string): Promise<any>;
@@ -45,6 +50,10 @@ export function NextMessageInput({
   sendLoading,
   disabled,
   showUploadIcon = true,
+  showAttachmentButton = true,
+  isDeepinsightMode = false,
+  selectedKbs = [],
+  onKbChange,
   onUpload,
   onInputChange,
   stopOutputMessage,
@@ -149,10 +158,15 @@ export function NextMessageInput({
         />
         <div
           className={cn('flex items-center justify-between gap-1.5', {
-            'justify-end': !showUploadIcon,
+            'justify-end': !showUploadIcon || !showAttachmentButton,
           })}
         >
-          {showUploadIcon && (
+          {isDeepinsightMode && showAttachmentButton === false ? (
+            <DeepinsightKbSelector
+              selectedKbs={selectedKbs}
+              onChange={onKbChange}
+            />
+          ) : showUploadIcon && showAttachmentButton ? (
             <FileUploadTrigger asChild>
               <Button
                 type="button"
@@ -165,7 +179,7 @@ export function NextMessageInput({
                 <span className="sr-only">Attach file</span>
               </Button>
             </FileUploadTrigger>
-          )}
+          ) : null}
           {sendLoading ? (
             <Button onClick={stopOutputMessage} className="size-5 rounded-sm">
               <CircleStop />
