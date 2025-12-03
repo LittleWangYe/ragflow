@@ -13,7 +13,7 @@ import { PaginationProps, message } from 'antd';
 import { FormInstance } from 'antd/lib';
 import axios from 'axios';
 import { EventSourceParserStream } from 'eventsource-parser/stream';
-import { has, isEmpty, omit } from 'lodash';
+import { has, omit } from 'lodash';
 import {
   ChangeEventHandler,
   useCallback,
@@ -179,14 +179,15 @@ function useSetDoneRecord() {
   }, []);
 
   const allDone = useMemo(() => {
-    return Object.values(doneRecord).every((val) => val);
+    const values = Object.values(doneRecord);
+    return values.length > 0 && values.every((val) => val);
   }, [doneRecord]);
 
   useEffect(() => {
-    if (!isEmpty(doneRecord) && allDone) {
+    if (allDone) {
       clearDoneRecord();
     }
-  }, [allDone, clearDoneRecord, doneRecord]);
+  }, [allDone, clearDoneRecord]);
 
   return {
     doneRecord,
@@ -288,12 +289,6 @@ export const useSendMessageWithSse = (
 
                 // 调试日志：打印原始数据
                 if (isDeepinsightApi && typeof d !== 'boolean') {
-                  console.log('📥 DeepInsight API 原始数据:', {
-                    url,
-                    dataType: typeof d,
-                    answerArrayLength: d?.answer?.length,
-                    firstAnswer: d?.answer?.[0],
-                  });
                 }
 
                 if (typeof d !== 'boolean') {
@@ -305,11 +300,6 @@ export const useSendMessageWithSse = (
                       body?.conversation_id,
                       body.chatBoxId,
                     );
-                    console.log('✅ 解析后数据:', {
-                      answer: parsedAnswer.answer?.substring(0, 100),
-                      progress: parsedAnswer.progress,
-                      progressStepsCount: parsedAnswer.progressSteps?.length,
-                    });
                   } else {
                     parsedAnswer = {
                       ...d,

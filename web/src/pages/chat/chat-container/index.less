@@ -2,10 +2,45 @@
   padding: 0 0 24px 24px;
   width: 100%;
   box-sizing: border-box;
+
+  &.withThinkingPanel {
+    padding: 0;
+
+    .messageWrapper {
+      display: flex;
+      gap: 0;
+    }
+  }
+
+  .messageWrapper {
+    display: flex;
+    width: 100%;
+    flex: 1;
+  }
+
   .messageContainer {
     overflow-y: auto;
     padding-right: 24px;
+    padding-left: 24px;
     width: 100%;
     box-sizing: border-box;
+    flex: 1;
+  }
+
+  .thinkingPanelWrapper {
+    width: 400px;
+    min-width: 400px;
+    max-width: 400px;
+    height: 100%;
+    box-sizing: border-box;
+    border-left: 1px solid var(--border-color-base, #d9d9d9);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    // 支持暗黑模式
+    :global(.dark-theme) & {
+      border-left-color: #434343;
+    }
   }
 }
