@@ -8,13 +8,14 @@ import { NextMessageInput } from '@/components/message-input/next';
 import MessageItem from '@/components/next-message-item';
 import PdfDrawer from '@/components/pdf-drawer';
 import { useClickDrawer } from '@/components/pdf-drawer/hooks';
+import { useStreamingRequest } from '@/contexts/streaming-request-context';
 import {
   useFetchAgent,
   useUploadCanvasFileWithProgress,
 } from '@/hooks/use-agent-request';
 import { useFetchUserInfo } from '@/hooks/user-setting-hooks';
 import { buildMessageUuidWithRole } from '@/utils/chat';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import { useParams } from 'umi';
 import DebugContent from '../debug-content';
 import { useAwaitCompentData } from '../hooks/use-chat-logic';
@@ -22,6 +23,7 @@ import { useIsTaskMode } from '../hooks/use-get-begin-query';
 
 function AgentChatBox() {
   const { data: canvasInfo, refetch } = useFetchAgent();
+  const { setIsStreaming } = useStreamingRequest();
   const {
     value,
     scrollRef,
@@ -35,6 +37,11 @@ function AgentChatBox() {
     findReferenceByMessageId,
     appendUploadResponseList,
   } = useSendAgentMessage({ refetch });
+
+  // 将 sendLoading 状态同步到全局 Context
+  useEffect(() => {
+    setIsStreaming(sendLoading);
+  }, [sendLoading, setIsStreaming]);
 
   const { visible, hideModal, documentId, selectedChunk, clickDocumentButton } =
     useClickDrawer();

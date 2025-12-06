@@ -17,7 +17,7 @@ import {
 } from 'antd';
 import { MenuItemProps } from 'antd/lib/menu/MenuItem';
 import classNames from 'classnames';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import ChatConfigurationModal from './chat-configuration-modal';
 import ChatContainer from './chat-container';
 import {
@@ -89,6 +89,14 @@ const Chat = () => {
   const [controller, setController] = useState(new AbortController());
   const { showEmbedModal, hideEmbedModal, embedVisible, beta } =
     useShowEmbedModal();
+
+  // 当 dialogId 改变时，重置 controller 以确保不同对话的独立性
+  useEffect(() => {
+    setController((pre) => {
+      pre.abort();
+      return new AbortController();
+    });
+  }, [dialogId]);
 
   const handleAppCardEnter = (id: string) => () => {
     handleItemEnter(id);

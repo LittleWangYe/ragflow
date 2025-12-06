@@ -125,7 +125,12 @@ export function Segmented({
                 ? activeClassName
                 : '',
             )}
-            onClick={() => handleOnChange(actualValue)}
+            onClick={() => {
+              // 完全禁用状态下不响应点击
+              if (!isLoading && !disabled) {
+                handleOnChange(actualValue);
+              }
+            }}
           >
             {isObject ? option.label : option}
           </div>
