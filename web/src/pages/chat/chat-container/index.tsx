@@ -160,7 +160,8 @@ const ChatContainer = ({ controller, settingsPanelOpen = false }: IProps) => {
             <div className={styles.thinkingPanelWrapper}>
               <DeepInsightThinkingPanel
                 data={thinkingData}
-                loading={sendLoading}
+                // 在 deepinsightChat 模式下不要在右侧面板显示加载框
+                loading={isDeepinsightMode ? false : sendLoading}
               />
             </div>
           )}

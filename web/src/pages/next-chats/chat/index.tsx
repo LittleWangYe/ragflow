@@ -1,27 +1,16 @@
 import EmbedDialog from '@/components/embed-dialog';
 import { useShowEmbedModal } from '@/components/embed-dialog/use-show-embed-dialog';
-import { PageHeader } from '@/components/page-header';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SharedFrom } from '@/constants/chat';
 import { useSetModalState } from '@/hooks/common-hooks';
-import { useNavigatePage } from '@/hooks/logic-hooks/navigate-hooks';
 import {
   useFetchConversation,
-  useFetchDialog,
   useGetChatSearchParams,
 } from '@/hooks/use-chat-request';
 import { cn } from '@/lib/utils';
 import { isEmpty } from 'lodash';
-import { ArrowUpRight, LogOut, Send } from 'lucide-react';
+import { ArrowUpRight, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'umi';
@@ -35,8 +24,6 @@ import { useSwitchDebugMode } from './use-switch-debug-mode';
 
 export default function Chat() {
   const { id } = useParams();
-  const { navigateToChatList } = useNavigatePage();
-  const { data } = useFetchDialog();
   const { t } = useTranslation();
   const { data: conversation } = useFetchConversation();
 
@@ -52,8 +39,7 @@ export default function Chat() {
     hasThreeChatBox,
   } = useAddChatBox();
 
-  const { showEmbedModal, hideEmbedModal, embedVisible, beta } =
-    useShowEmbedModal();
+  const { hideEmbedModal, embedVisible, beta } = useShowEmbedModal();
 
   const { conversationId, isNew } = useGetChatSearchParams();
   const searchParams = new URLSearchParams(window.location.search);
@@ -87,27 +73,9 @@ export default function Chat() {
   }
 
   return (
-    <section className="h-full flex flex-col pr-5">
-      <PageHeader>
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink onClick={navigateToChatList}>
-                {t('chat.chat')}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{data.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <Button onClick={showEmbedModal}>
-          <Send />
-          {t('common.embedIntoSite')}
-        </Button>
-      </PageHeader>
-      <div className="flex flex-1 min-h-0 pb-9">
+    <section className="h-full flex flex-col overflow-hidden">
+      {/* Breadcrumb 和嵌入网站代码按钮已隐藏 */}
+      <div className="flex flex-1 min-h-0 pr-5">
         <Sessions
           hasSingleChatBox={hasSingleChatBox}
           handleConversationCardClick={handleConversationCardClick}
@@ -120,10 +88,10 @@ export default function Chat() {
         ></Sessions>
 
         <Card className="flex-1 min-w-0 bg-transparent border h-full">
-          <CardContent className="flex p-0 h-full">
-            <Card className="flex flex-col flex-1 bg-transparent min-w-0">
+          <CardContent className="flex flex-col p-0 h-full min-h-0">
+            <Card className="flex flex-col flex-1 bg-transparent min-w-0 min-h-0">
               <CardHeader
-                className={cn('p-5', { 'border-b': hasSingleChatBox })}
+                className={cn('p-4', { 'border-b': hasSingleChatBox })}
               >
                 <CardTitle className="flex justify-between items-center text-base">
                   <div className="truncate">{conversation.name}</div>

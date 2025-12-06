@@ -64,7 +64,7 @@ export function Sessions({
   }
 
   return (
-    <section className="p-6 w-[296px]  flex flex-col">
+    <section className="p-6 w-[296px] flex flex-col h-full overflow-hidden">
       <section className="flex items-center text-base justify-between gap-2">
         <div className="flex gap-3 items-center min-w-0">
           <RAGFlowAvatar
@@ -114,7 +114,7 @@ export function Sessions({
           </Card>
         ))}
       </div>
-      <div className="space-y-2 py-2">
+      <div className="space-y-2 py-2 flex-shrink-0">
         {isDeepinsightMode && onToggleThinkingPanel && (
           <Button
             className="w-full"
@@ -124,16 +124,14 @@ export function Sessions({
             {thinkingPanelVisible ? '隐藏思考面板' : '显示思考面板'}
           </Button>
         )}
-        {!isDeepinsightMode && (
-          <Button
-            className="w-full"
-            onClick={switchSettingVisible}
-            disabled={!hasSingleChatBox}
-            variant={'outline'}
-          >
-            {t('chat.chatSetting')}
-          </Button>
-        )}
+        <Button
+          className="w-full"
+          onClick={switchSettingVisible}
+          disabled={!hasSingleChatBox}
+          variant={'outline'}
+        >
+          {t('chat.chatSetting')}
+        </Button>
       </div>
     </section>
   );

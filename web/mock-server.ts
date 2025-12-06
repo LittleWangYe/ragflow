@@ -47,7 +47,7 @@ app.post('/api/test-sse', (req: Request, res: Response) => {
 
   const sendMessage = () => {
     if (messageNum <= 5) {
-      const delay = (messageNum - 1) * 500; // 每条消息相隔500ms
+      const delay = (messageNum - 1) * 3000; // 每条消息相隔500ms
       setTimeout(() => {
         if (!res.writableEnded) {
           res.write(
@@ -97,7 +97,7 @@ app.post(
     // 使用相对于当前工作目录的路径（项目根目录）
     const responseFile = path.resolve(
       process.cwd(),
-      'response_confusionQuestion1.txt',
+      'response_confusionQuestion3.txt',
     );
 
     // 检查文件是否存在
@@ -144,8 +144,8 @@ app.post(
 
           lineIndex++;
 
-          // 使用 setImmediate 继续发送下一行，不阻塞事件循环
-          setImmediate(sendNext);
+          // 使用 setTimeout 每隔 100ms 发送下一行
+          setTimeout(sendNext, 20);
         } else if (!res.writableEnded) {
           // 所有数据发送完成
           console.log(`✅ 全部 ${sentCount} 行数据发送完成`);
@@ -185,7 +185,7 @@ app.post('/api/deepinsight/chat', (req: Request, res: Response) => {
   console.log('📡 DeepInsight Chat 请求开始...');
 
   // 使用相对于当前工作目录的路径（项目根目录）
-  const responseFile = path.resolve(process.cwd(), 'response_chat.txt');
+  const responseFile = path.resolve(process.cwd(), 'response_chat1.txt');
 
   // 检查文件是否存在
   if (!fs.existsSync(responseFile)) {
@@ -231,8 +231,8 @@ app.post('/api/deepinsight/chat', (req: Request, res: Response) => {
 
         lineIndex++;
 
-        // 使用 setImmediate 继续发送下一行，不阻塞事件循环
-        setImmediate(sendNext);
+        // 使用 setTimeout 每隔 500ms 发送下一行
+        setTimeout(sendNext, 20);
       } else if (!res.writableEnded) {
         // 所有数据发送完成
         console.log(`✅ 全部 ${sentCount} 行数据发送完成`);

@@ -132,9 +132,15 @@ export const useFetchChatAppList = () => {
     gcTime: 0,
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      const { data } = await chatService.listDialog();
+      const { data } = await chatService.listDialog({
+        params: {
+          keywords: '',
+          page_size: 50,
+          page: 1,
+        },
+      });
 
-      return data?.data ?? [];
+      return data?.data?.dialogs ?? [];
     },
   });
 

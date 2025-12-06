@@ -1,4 +1,5 @@
 import { ReactComponent as AssistantIcon } from '@/assets/svg/assistant.svg';
+import { DeepinsightGenerationButtons } from '@/components/deepinsight-generation-buttons';
 import { MessageType } from '@/constants/chat';
 import { IReferenceChunk, IReferenceObject } from '@/interfaces/database/chat';
 import classNames from 'classnames';
@@ -52,6 +53,8 @@ interface IProps
   showLog?: boolean;
   isShare?: boolean;
   isDeepinsightChat?: boolean;
+  isDeepinsightConference?: boolean;
+  isCompleted?: boolean;
 }
 
 function MessageItem({
@@ -75,6 +78,8 @@ function MessageItem({
   showLog,
   isShare,
   isDeepinsightChat = false,
+  isDeepinsightConference = false,
+  isCompleted = false,
 }: IProps) {
   const { theme } = useTheme();
   const isAssistant = item.role === MessageType.Assistant;
@@ -281,6 +286,17 @@ function MessageItem({
                 list={referenceDocuments}
               ></ReferenceDocumentList>
             )}
+
+            {isAssistant &&
+              isCompleted &&
+              (isDeepinsightChat || isDeepinsightConference) &&
+              conversationId && (
+                <DeepinsightGenerationButtons
+                  conversationId={conversationId}
+                  messageId={item.id}
+                  messageContent={getContentString(item.content)}
+                />
+              )}
 
             {isUser && (
               <UploadedMessageFiles files={item.files}></UploadedMessageFiles>
