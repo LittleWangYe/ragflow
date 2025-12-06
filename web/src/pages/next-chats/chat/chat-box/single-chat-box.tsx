@@ -4,6 +4,7 @@ import MessageItem from '@/components/message-item';
 import PdfDrawer from '@/components/pdf-drawer';
 import { useClickDrawer } from '@/components/pdf-drawer/hooks';
 import { ChatSearchParams, MessageType } from '@/constants/chat';
+import { useStreamingRequest } from '@/contexts/streaming-request-context';
 import {
   useFetchConversation,
   useFetchDialog,
@@ -12,7 +13,7 @@ import {
 import { useFetchUserInfo } from '@/hooks/user-setting-hooks';
 import { AnswerItem } from '@/interfaces/database/chat';
 import { buildMessageUuidWithRole } from '@/utils/chat';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 import {
   useGetSendButtonDisabled,
@@ -38,6 +39,7 @@ export function SingleChatBox({
     useClickDrawer();
   const [selectedKbs, setSelectedKbs] = useState<string[]>([]);
   const [webSearch, setWebSearch] = useState(false);
+  const { setIsStreaming } = useStreamingRequest();
 
   const {
     value,
@@ -55,6 +57,11 @@ export function SingleChatBox({
     handleSendMessage,
     addNewestQuestion,
   } = useSendMessage(controller, selectedKbs, webSearch);
+
+  // 将 sendLoading 状态同步到全局 Context
+  useEffect(() => {
+    setIsStreaming(sendLoading);
+  }, [sendLoading, setIsStreaming]);
   const { data: userInfo } = useFetchUserInfo();
   const { data: currentDialog } = useFetchDialog();
   const { createConversationBeforeUploadDocument } =

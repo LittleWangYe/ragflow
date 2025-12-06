@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Segmented, SegmentedValue } from '@/components/ui/segmented';
 import { LanguageList, LanguageMap, ThemeEnum } from '@/constants/common';
+import { useStreamingRequest } from '@/contexts/streaming-request-context';
 import { useFetchChatAppList } from '@/hooks/chat-hooks';
 import { useChangeLanguage } from '@/hooks/logic-hooks';
 import { useNavigatePage } from '@/hooks/logic-hooks/navigate-hooks';
@@ -18,6 +19,7 @@ import { useNavigationLock } from '@/hooks/use-navigation-lock';
 import { useFetchUserInfo } from '@/hooks/user-setting-hooks';
 import { Routes } from '@/routes';
 import { generateChatMenuItems } from '@/utils/chat-menu';
+import { message } from 'antd';
 import { camelCase } from 'lodash';
 import {
   ChevronDown,
@@ -48,6 +50,8 @@ export function Header() {
 
   const changeLanguage = useChangeLanguage();
   const { setTheme, theme } = useTheme();
+
+  const { isStreaming } = useStreamingRequest();
 
   const {
     data: { language = 'English', avatar, nickname },
@@ -166,6 +170,16 @@ export function Header() {
       return;
     }
 
+    // 检查是否正在请求流式数据
+    if (isStreaming) {
+      message.warning(
+        t('message.waitForStreamComplete') ||
+          '当前正在获取会话内容,请停止或者等待会话完成后再试',
+      );
+      // 重要：不做任何其他操作，Segmented 的 disabled 会阻止状态变化
+      return;
+    }
+
     // 启动导航锁定，禁用菜单点击直到页面加载完成
     startNavigation(pathStr);
 
@@ -188,7 +202,7 @@ export function Header() {
         />
       </div>
 
-      {/* 🔑 关键：加 isLoading 状态禁用菜单，防止快速切换导致不同步 */}
+      {/* 🔑 关键：加 isLoading 状态禁用菜单，防止快速切换导致不同步；加 disabled 防止流式请求时改变状态 */}
       <Segmented
         key={`segmented-menu-${tagsData.length}-${currentPath}`}
         rounded="xxxl"
@@ -197,7 +211,8 @@ export function Header() {
         options={options}
         value={currentPath}
         onChange={handleChange}
-        isLoading={isNavigating}
+        isLoading={isNavigating || isStreaming}
+        disabled={isStreaming}
         activeClassName="text-bg-base bg-metallic-gradient border-b-[#00BEB4] border-b-2"
       />
 

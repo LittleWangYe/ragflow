@@ -369,9 +369,26 @@ export const useSendNextMessage = (controller: AbortController) => {
   const { conversationId, isNew } = useGetChatSearchParams();
   const { handleInputChange, value, setValue } = useHandleMessageInputChange();
 
-  const { send, answer, done } = useSendMessageWithSse(
-    api.completeConversation,
+  // 获取 conversationApi 参数，确定使用哪个 API
+  const [searchParams] = useSearchParams();
+  const conversationApi = useMemo(
+    () => searchParams.get(ChatSearchParams.ConversationApi) || '',
+    [searchParams],
   );
+
+  // 根据 conversationApi 参数选择不同的 API 端点
+  const apiUrl = useMemo(() => {
+    switch (conversationApi) {
+      case 'deepinsightConferenceQuestion':
+        return api.deepinsightConferenceQuestion;
+      case 'deepinsightChat':
+        return api.deepinsightChat;
+      default:
+        return api.completeConversation;
+    }
+  }, [conversationApi]);
+
+  const { send, answer, done } = useSendMessageWithSse(apiUrl);
   const {
     scrollRef,
     messageContainerRef,

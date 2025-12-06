@@ -951,6 +951,8 @@ General：实体和关系提取提示来自 GitHub - microsoft/graphrag：基于
       networkAnomalyDescription: '您的网络发生异常，无法连接服务器',
       networkAnomaly: '网络异常',
       hint: '提示',
+      waitForStreamComplete:
+        '当前正在获取会话内容,请停止或者等待会话完成后再试',
     },
     fileManager: {
       files: '文件',

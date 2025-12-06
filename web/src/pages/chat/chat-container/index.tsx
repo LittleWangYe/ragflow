@@ -1,5 +1,6 @@
 import MessageItem from '@/components/message-item';
 import { ChatSearchParams, MessageType } from '@/constants/chat';
+import { useStreamingRequest } from '@/contexts/streaming-request-context';
 import { Flex, Spin } from 'antd';
 import {
   useCreateConversationBeforeUploadDocument,
@@ -22,8 +23,8 @@ import {
 import { useFetchUserInfo } from '@/hooks/user-setting-hooks';
 import { AnswerItem } from '@/interfaces/database/chat';
 import { buildMessageUuidWithRole } from '@/utils/chat';
-import { memo, useMemo } from 'react';
-import styles from './index.less';
+import { useEffect, useMemo } from 'react';
+import { useLocation } from 'umi';
 
 interface IProps {
   controller: AbortController;
@@ -34,12 +35,19 @@ const ChatContainer = ({ controller, settingsPanelOpen = false }: IProps) => {
   const { conversationId } = useGetChatSearchParams();
   const { data: conversation } = useFetchNextConversation();
   const { data: currentDialog } = useFetchNextDialog();
+  const { search } = useLocation();
+  const { setIsStreaming } = useStreamingRequest();
 
-  // 获取路由参数，判断是否为 deepinsight 模式
-  const searchParams = new URLSearchParams(window.location.search);
-  const conversationApi =
-    searchParams.get(ChatSearchParams.ConversationApi) || '';
-  const isDeepinsightMode = conversationApi === 'deepinsightChat';
+  // 获取路由参数，判断会话类型
+  const conversationApi = useMemo(() => {
+    const params = new URLSearchParams(search);
+    return params.get(ChatSearchParams.ConversationApi) || '';
+  }, [search]);
+
+  // 判断是否为任何 deepinsight 模式
+  const isDeepinsightMode =
+    conversationApi === 'deepinsightChat' ||
+    conversationApi === 'deepinsightConferenceQuestion';
 
   const {
     value,
@@ -54,6 +62,11 @@ const ChatContainer = ({ controller, settingsPanelOpen = false }: IProps) => {
     removeMessageById,
     stopOutputMessage,
   } = useSendNextMessage(controller);
+
+  // 将 sendLoading 状态同步到全局 Context
+  useEffect(() => {
+    setIsStreaming(sendLoading);
+  }, [sendLoading, setIsStreaming]);
 
   // 提取deepinsight思考数据
   const thinkingData = useMemo(() => {
@@ -70,24 +83,31 @@ const ChatContainer = ({ controller, settingsPanelOpen = false }: IProps) => {
     return [];
   }, [derivedMessages]);
 
-  // 在 deepinsight 模式下，过滤掉 type 为 think 和 result 的消息
+  // 在 deepinsight 模式下，根据 conversationApi 类型进行不同的消息过滤
   const filteredMessages = useMemo(() => {
     if (!isDeepinsightMode) {
       return derivedMessages;
     }
-    return derivedMessages?.filter((msg) => {
-      // 保留所有用户消息
-      if (msg.role === MessageType.User) {
+
+    // 对于 deepinsightChat，过滤掉 type 为 think 和 result 的消息
+    if (conversationApi === 'deepinsightChat') {
+      return derivedMessages?.filter((msg) => {
+        // 保留所有用户消息
+        if (msg.role === MessageType.User) {
+          return true;
+        }
+        // 对于助手消息，过滤掉 type 为 think 或 result 的
+        if (msg.role === MessageType.Assistant) {
+          const messageType = msg.data?.type;
+          return messageType !== 'think' && messageType !== 'result';
+        }
         return true;
-      }
-      // 对于助手消息，过滤掉 type 为 think 或 result 的
-      if (msg.role === MessageType.Assistant) {
-        const messageType = msg.data?.type;
-        return messageType !== 'think' && messageType !== 'result';
-      }
-      return true;
-    });
-  }, [derivedMessages, isDeepinsightMode]);
+      });
+    }
+
+    // 对于 deepinsightConferenceQuestion 和其他模式，保留所有消息
+    return derivedMessages;
+  }, [derivedMessages, isDeepinsightMode, conversationApi]);
 
   // 检测是否为deepinsightChat模式
   const isDeepinsightChat = useMemo(() => {

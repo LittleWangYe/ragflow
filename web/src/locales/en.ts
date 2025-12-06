@@ -1015,6 +1015,8 @@ Example: https://fsn1.your-objectstorage.com`,
         'There is an abnormality in your network and you cannot connect to the server.',
       networkAnomaly: 'network anomaly',
       hint: 'hint',
+      waitForStreamComplete:
+        'Currently fetching session content. Please stop or wait for the session to complete before trying again.',
     },
     fileManager: {
       files: 'Files',
