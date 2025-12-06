@@ -40,13 +40,16 @@ const segmentedVariants = {
     xl: 'px-6 py-2',
   },
 };
-export interface SegmentedProps
-  extends Omit<React.HTMLProps<HTMLDivElement>, 'onChange'> {
+export interface SegmentedProps extends Omit<
+  React.HTMLProps<HTMLDivElement>,
+  'onChange'
+> {
   options: SegmentedOptions;
   defaultValue?: SegmentedValue;
   value?: SegmentedValue;
   onChange?: (value: SegmentedValue) => void;
   disabled?: boolean;
+  isLoading?: boolean;
   prefixCls?: string;
   direction?: 'ltr' | 'rtl';
   motionName?: string;
@@ -67,22 +70,37 @@ export function Segmented({
   rounded = 'default',
   sizeType = 'default',
   buttonSize = 'default',
+  disabled = false,
+  isLoading = false,
 }: SegmentedProps) {
   const [selectedValue, setSelectedValue] = React.useState<
     SegmentedValue | undefined
   >(value);
+
+  React.useEffect(() => {
+    setSelectedValue(value);
+  }, [value]);
+
   const handleOnChange = (e: SegmentedValue) => {
+    // 在加载状态或禁用状态下不处理点击
+    if (isLoading || disabled) {
+      return;
+    }
     if (onChange) {
       onChange(e);
     }
     setSelectedValue(e);
   };
+
   return (
     <div
       className={cn(
-        'flex items-center p-1 gap-2 bg-bg-card',
+        'flex items-center p-1 gap-2 bg-bg-card transition-opacity',
         segmentedVariants.round[rounded],
         segmentedVariants.size[sizeType],
+        {
+          'opacity-50 cursor-not-allowed': isLoading || disabled,
+        },
         className,
       )}
     >
@@ -94,11 +112,13 @@ export function Segmented({
           <div
             key={actualValue}
             className={cn(
-              'inline-flex items-center text-base font-normal cursor-pointer',
+              'inline-flex items-center text-base font-normal',
               segmentedVariants.round[rounded],
               segmentedVariants.buttonSize[buttonSize],
               {
                 'text-text-primary bg-bg-base': selectedValue === actualValue,
+                'cursor-pointer': !isLoading && !disabled,
+                'cursor-not-allowed': isLoading || disabled,
               },
               itemClassName,
               activeClassName && selectedValue === actualValue
