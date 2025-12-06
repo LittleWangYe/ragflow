@@ -14,6 +14,7 @@ import { useFetchChatAppList } from '@/hooks/chat-hooks';
 import { useChangeLanguage } from '@/hooks/logic-hooks';
 import { useNavigatePage } from '@/hooks/logic-hooks/navigate-hooks';
 import { useNavigateWithFromState } from '@/hooks/route-hook';
+import { useNavigationLock } from '@/hooks/use-navigation-lock';
 import { useFetchUserInfo } from '@/hooks/user-setting-hooks';
 import { Routes } from '@/routes';
 import { generateChatMenuItems } from '@/utils/chat-menu';
@@ -55,6 +56,10 @@ export function Header() {
   // Get dialog list from local storage first, then from API
   const { data: apiDialogList = [] } = useFetchChatAppList();
   const [localDialogList, setLocalDialogList] = useState<any[]>([]);
+
+  // 使用导航锁定 hook 管理菜单禁用状态
+  // 防止用户快速点击菜单导致页面和菜单显示不同步
+  const { isNavigating, startNavigation } = useNavigationLock();
 
   // Load from localStorage or fallback to API
   useEffect(() => {
@@ -152,10 +157,20 @@ export function Header() {
         value: tag.path, // ✅ 完整路径（含 query）
       };
     });
-  }, [tagsData, t]);
+  }, [tagsData]);
 
   const handleChange = (path: SegmentedValue) => {
-    navigate(path as string); // umi 支持带 query 的路径字符串
+    const pathStr = path as string;
+    // 防止重复导航到同一路径
+    if (currentFullPath === pathStr) {
+      return;
+    }
+
+    // 启动导航锁定，禁用菜单点击直到页面加载完成
+    startNavigation(pathStr);
+
+    // 执行导航
+    navigate(pathStr);
   };
 
   const handleLogoClick = useCallback(() => {
@@ -173,7 +188,7 @@ export function Header() {
         />
       </div>
 
-      {/* 🔑 关键：加 key 强制刷新 Segmented */}
+      {/* 🔑 关键：加 isLoading 状态禁用菜单，防止快速切换导致不同步 */}
       <Segmented
         key={`segmented-menu-${tagsData.length}-${currentPath}`}
         rounded="xxxl"
@@ -182,6 +197,7 @@ export function Header() {
         options={options}
         value={currentPath}
         onChange={handleChange}
+        isLoading={isNavigating}
         activeClassName="text-bg-base bg-metallic-gradient border-b-[#00BEB4] border-b-2"
       />
 
