@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { t } from 'i18next';
 import { CircleStop, Paperclip, Send, Upload, X } from 'lucide-react';
 import * as React from 'react';
+
 import { toast } from 'sonner';
 
 interface IProps {
@@ -34,7 +35,9 @@ interface IProps {
   showAttachmentButton?: boolean;
   isDeepinsightMode?: boolean;
   selectedKbs?: string[];
+  webSearch?: boolean;
   onKbChange?: (kbIds: string[]) => void;
+  onWebSearchChange?: (value: boolean) => void;
   onPressEnter(...prams: any[]): void;
   onInputChange: React.ChangeEventHandler<HTMLTextAreaElement>;
   createConversationBeforeUploadDocument?(message: string): Promise<any>;
@@ -53,7 +56,9 @@ export function NextMessageInput({
   showAttachmentButton = true,
   isDeepinsightMode = false,
   selectedKbs = [],
+  webSearch = false,
   onKbChange,
+  onWebSearchChange,
   onUpload,
   onInputChange,
   stopOutputMessage,
@@ -156,29 +161,51 @@ export function NextMessageInput({
           disabled={isUploading || disabled || sendLoading}
           onKeyDown={handleKeyDown}
         />
-        <div
-          className={cn('flex items-center justify-between gap-1.5', {
-            'justify-end': !showUploadIcon || !showAttachmentButton,
-          })}
-        >
-          {isDeepinsightMode && showAttachmentButton === false ? (
-            <DeepinsightKbSelector
-              selectedKbs={selectedKbs}
-              onChange={onKbChange}
-            />
-          ) : showUploadIcon && showAttachmentButton ? (
-            <FileUploadTrigger asChild>
-              <Button
+        {/* Deep insight 模式：控件与发送按钮同一行 */}
+        <div className="flex items-center justify-between gap-1.5">
+          {/* Left: deepinsight controls (KB selector + web search toggle) */}
+          {isDeepinsightMode && (
+            <div className="flex items-center gap-2 flex-1">
+              <div className="flex-1 min-w-0" style={{ maxWidth: '300px' }}>
+                <DeepinsightKbSelector
+                  selectedKbs={selectedKbs}
+                  onChange={onKbChange}
+                />
+              </div>
+              <button
                 type="button"
-                size="icon"
-                variant="ghost"
-                className="size-7 rounded-sm"
-                disabled={isUploading || sendLoading}
+                onClick={() => onWebSearchChange?.(!webSearch)}
+                className={cn(
+                  'px-3 py-1.5 rounded text-sm border whitespace-nowrap',
+                  {
+                    'bg-blue-600 text-white border-blue-600': webSearch,
+                    'bg-white text-gray-700 border-gray-200': !webSearch,
+                  },
+                )}
               >
-                <Paperclip className="size-3.5" />
-                <span className="sr-only">Attach file</span>
-              </Button>
-            </FileUploadTrigger>
+                联网搜索
+              </button>
+            </div>
+          )}
+
+          {/* Right: file upload and send button */}
+          {!isDeepinsightMode || showAttachmentButton !== false ? (
+            <>
+              {showUploadIcon && showAttachmentButton ? (
+                <FileUploadTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-7 rounded-sm"
+                    disabled={isUploading || sendLoading}
+                  >
+                    <Paperclip className="size-3.5" />
+                    <span className="sr-only">Attach file</span>
+                  </Button>
+                </FileUploadTrigger>
+              ) : null}
+            </>
           ) : null}
           {sendLoading ? (
             <Button onClick={stopOutputMessage} className="size-5 rounded-sm">

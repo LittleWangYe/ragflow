@@ -1,6 +1,6 @@
 import ToolCallDisplay from '@/components/tool-call-display';
 import { AnswerItem } from '@/interfaces/database/chat';
-import { RightOutlined } from '@ant-design/icons';
+import { CheckOutlined, RightOutlined } from '@ant-design/icons';
 import { Empty, Segmented, Spin } from 'antd';
 import 'katex/dist/katex.min.css';
 import { useMemo, useState } from 'react';
@@ -82,7 +82,9 @@ const DeepInsightThinkingPanel = ({ data = [], loading = false }: IProps) => {
               message_id: `group-${item.type}`,
               type: item.type,
               content: GROUP_LABELS[item.type] || item.content,
-            } as unknown as AnswerItem,
+              process: 'think',
+              create_time: Date.now(),
+            } as AnswerItem,
             children: itemsOfType.map(
               (it) => itemMap[it.message_id] || { item: it, children: [] },
             ),
@@ -129,8 +131,35 @@ const DeepInsightThinkingPanel = ({ data = [], loading = false }: IProps) => {
   };
 
   // 获取二级标题
+  const stripTrailingPercentage = (s: string) => {
+    // remove trailing percentage like ' 50%' or '(50%)'
+    return s.replace(/\s*\(?\d{1,3}%\)?\s*$/g, '').trim();
+  };
+
   const getLevel2Title = (item: AnswerItem): string => {
-    return item.content;
+    if (typeof item.content === 'string') {
+      const firstLine = item.content.split('\n')[0] || '';
+      return stripTrailingPercentage(firstLine);
+    }
+    return '';
+  };
+
+  const getLevel1Title = (item: AnswerItem): string => {
+    // Prefer group label if present; otherwise use first line of content without trailing percentage
+    if (GROUP_LABELS[item.type]) return GROUP_LABELS[item.type];
+    if (typeof item.content === 'string') {
+      const firstLine = item.content.split('\n')[0] || '';
+      return stripTrailingPercentage(firstLine);
+    }
+    return '';
+  };
+
+  // 判断是否为简短的单行文本（不值得再下方重复显示）
+  const isSimpleSingleLineContent = (item: AnswerItem): boolean => {
+    if (typeof item.content !== 'string') return false;
+    // 检查是否只有一行，且长度较短（< 100 字符）
+    const lines = item.content.split('\n');
+    return lines.length === 1 && item.content.length < 100;
   };
 
   // 获取三级标题和预览
@@ -219,7 +248,7 @@ const DeepInsightThinkingPanel = ({ data = [], loading = false }: IProps) => {
             );
           }
 
-          const display = getLevel3Display(child.item);
+          // 其它类型也使用 Markdown 渲染（不再只显示纯文本），以统一展示
           return (
             <div
               key={child.item.message_id}
@@ -230,8 +259,19 @@ const DeepInsightThinkingPanel = ({ data = [], loading = false }: IProps) => {
                   : JSON.stringify(child.item.content)
               }
             >
-              <div className={styles.level3Indicator}>{display.icon}</div>
-              <div className={styles.level3Content}>{display.text}</div>
+              <div className={styles.level3Indicator}>
+                {getLevel3Display(child.item).icon}
+              </div>
+              <div className={styles.level3Content}>
+                <Markdown
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[rehypeKatex, rehypeRaw]}
+                >
+                  {typeof child.item.content === 'string'
+                    ? child.item.content
+                    : JSON.stringify(child.item.content)}
+                </Markdown>
+              </div>
             </div>
           );
         })}
@@ -273,13 +313,74 @@ const DeepInsightThinkingPanel = ({ data = [], loading = false }: IProps) => {
                 style={{ width: `${item.percentage}%` }}
               />
             </div>
+            {item.percentage === 100 && (
+              <div className={styles.progressIcon}>
+                <CheckOutlined style={{ color: '#52c41a', fontSize: 12 }} />
+              </div>
+            )}
           </div>
         )}
 
+        {/* 二级项自身的内容（只有在无子节点时显示，且非 content_tool_call 使用 Markdown） */}
+        {children.length === 0 &&
+          item.content &&
+          item.type !== 'content_tool_call' && (
+            <div className={styles.childContent}>
+              <Markdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex, rehypeRaw]}
+              >
+                {typeof item.content === 'string'
+                  ? item.content
+                  : JSON.stringify(item.content)}
+              </Markdown>
+            </div>
+          )}
+
+        {children.length === 0 &&
+          item.content &&
+          item.type === 'content_tool_call' &&
+          (() => {
+            let toolData: any = { name: '工具调用', args: {}, result: [] };
+            try {
+              const parsed =
+                typeof item.content === 'string'
+                  ? JSON.parse(item.content)
+                  : item.content;
+              if (parsed && typeof parsed === 'object') {
+                toolData = {
+                  name: parsed.name || '工具调用',
+                  args: parsed.args || {},
+                  result: parsed.result || [],
+                  id: parsed.id,
+                };
+              }
+            } catch {
+              toolData = { name: '工具调用', args: {}, result: [] };
+            }
+            return (
+              <div className={styles.childContent}>
+                <ToolCallDisplay {...toolData} />
+              </div>
+            );
+          })()}
         {/* 三级内容（仅显示子节点，不重复显示二级 content） */}
         {isExpanded && children.length > 0 && renderLevel3Items(children)}
       </div>
     );
+  };
+
+  // 计算 group 节点的平均 percentage（仅用于 GROUP_TYPES 分组，如 thinking_step_topic）
+  const computeAveragePercentage = (node: ThinkingNode): number | undefined => {
+    if (!node || !node.children || node.children.length === 0) return undefined;
+    const vals: number[] = [];
+    node.children.forEach((ch) => {
+      const p = ch.item?.percentage;
+      if (typeof p === 'number' && Number.isFinite(p)) vals.push(p);
+    });
+    if (vals.length === 0) return undefined;
+    const sum = vals.reduce((s, v) => s + v, 0);
+    return Math.round(sum / vals.length);
   };
 
   // 渲染一级内容
@@ -312,15 +413,11 @@ const DeepInsightThinkingPanel = ({ data = [], loading = false }: IProps) => {
                       <RightOutlined />
                     </span>
                   )}
-                  <span>
-                    {GROUP_LABELS[item.type as keyof typeof GROUP_LABELS] ||
-                      item.content ||
-                      ''}
-                  </span>
+                  <span>{getLevel1Title(item)}</span>
                 </div>
               </div>
 
-              {/* 一级进度条 */}
+              {/* 一级进度条：优先显示自身 percentage；对分组节点（如 深度探索）也显示按子项计算的平均进度 */}
               {item.percentage !== undefined && (
                 <div className={styles.progressBar}>
                   <div className={styles.barContainer}>
@@ -329,8 +426,93 @@ const DeepInsightThinkingPanel = ({ data = [], loading = false }: IProps) => {
                       style={{ width: `${item.percentage}%` }}
                     />
                   </div>
+                  {item.percentage === 100 && (
+                    <div className={styles.progressIcon}>
+                      <CheckOutlined
+                        style={{ color: '#52c41a', fontSize: 12 }}
+                      />
+                    </div>
+                  )}
+
+                  {/* 一级节点的具体内容：仅当不是简短单行文本时才渲染（避免重复）
+                       content_tool_call 使用 ToolCallDisplay，其他使用 Markdown 渲染 */}
+                  {!isSimpleSingleLineContent(item) && (
+                    <div className={styles.level1Content}>
+                      {item.type === 'content_tool_call' ? (
+                        (() => {
+                          let toolData: any = {
+                            name: '工具调用',
+                            args: {},
+                            result: [],
+                          };
+                          try {
+                            const parsed =
+                              typeof item.content === 'string'
+                                ? JSON.parse(item.content)
+                                : item.content;
+                            if (parsed && typeof parsed === 'object') {
+                              toolData = {
+                                name: parsed.name || '工具调用',
+                                args: parsed.args || {},
+                                result: parsed.result || [],
+                                id: parsed.id,
+                              };
+                            }
+                          } catch {
+                            toolData = {
+                              name: '工具调用',
+                              args: {},
+                              result: [],
+                            };
+                          }
+                          return (
+                            <div className={styles.level1ToolCall}>
+                              <ToolCallDisplay {...toolData} />
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <div className={styles.level1Markdown}>
+                          <Markdown
+                            remarkPlugins={[remarkGfm, remarkMath]}
+                            rehypePlugins={[rehypeKatex, rehypeRaw]}
+                          >
+                            {typeof item.content === 'string'
+                              ? item.content
+                              : JSON.stringify(item.content)}
+                          </Markdown>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* 对于分组类型，计算并显示子项平均进度（如果存在） */}
+              {GROUP_TYPES.includes(item.type) &&
+                (() => {
+                  const avg = computeAveragePercentage(node);
+                  if (typeof avg === 'number') {
+                    return (
+                      <div className={styles.progressBar}>
+                        <div className={styles.barContainer}>
+                          <div
+                            className={styles.barFill}
+                            style={{ width: `${avg}%` }}
+                          />
+                        </div>
+                        {avg === 100 && (
+                          <div className={styles.progressIcon}>
+                            <CheckOutlined
+                              style={{ color: '#52c41a', fontSize: 12 }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
 
               {/* 二级内容 */}
               {isExpanded && children.length > 0 && (

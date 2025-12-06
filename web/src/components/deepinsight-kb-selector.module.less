@@ -1,0 +1,28 @@
+.kbSelector {
+  width: 100%;
+
+  :global {
+    .ant-select-selector {
+      min-height: 32px !important;
+      height: auto !important;
+      padding: 4px 8px !important;
+      flex-wrap: wrap !important;
+      align-content: flex-start !important;
+    }
+
+    .ant-select-selection-item {
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+
+    .ant-select-selection-item-content {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}

@@ -1,0 +1,175 @@
+.planContainer {
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border: 1px solid #f0f0f0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+
+  .title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #262626;
+    display: flex;
+    align-items: center;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 20px;
+      background-color: #ff4d4f;
+      border-radius: 2px;
+      margin-right: 8px;
+    }
+  }
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.planItem {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  background-color: #fafafa;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+
+  .itemIcon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: #52c41a;
+    font-size: 16px;
+    margin-top: 2px;
+  }
+
+  .itemContent {
+    flex: 1;
+    min-width: 0;
+
+    .itemTitle {
+      font-size: 14px;
+      color: #262626;
+      font-weight: 500;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .itemDescription {
+      font-size: 12px;
+      color: #8c8c8c;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+  }
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+
+  .timeEstimate {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #8c8c8c;
+
+    .timeIcon {
+      font-size: 14px;
+    }
+  }
+
+  .startBtn {
+    background-color: #1890ff;
+    border-color: #1890ff;
+    height: 32px;
+    padding: 0 24px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+
+    &:hover {
+      background-color: #40a9ff;
+      border-color: #40a9ff;
+    }
+
+    &:active {
+      background-color: #096dd9;
+      border-color: #096dd9;
+    }
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+// 深色模式
+:global(.dark) {
+  .planContainer {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .header {
+    .title {
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+
+  .planItem {
+    background-color: rgba(255, 255, 255, 0.04);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .itemContent {
+      .itemTitle {
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .itemDescription {
+        color: rgba(255, 255, 255, 0.45);
+      }
+    }
+  }
+
+  .footer {
+    border-top-color: rgba(255, 255, 255, 0.12);
+
+    .timeEstimate {
+      color: rgba(255, 255, 255, 0.45);
+    }
+  }
+
+  .empty {
+    color: rgba(255, 255, 255, 0.45);
+  }
+}

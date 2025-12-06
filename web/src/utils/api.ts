@@ -121,22 +121,25 @@ export default {
   listConversation: `${api_host}/conversation/list`,
   removeConversation: `${api_host}/conversation/rm`,
   completeConversation: `${api_host}/conversation/completion`,
-  deepinsightConferenceQuestion:
-    process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3001/api/deepinsight/conference_question'
-      : `${api_host}/deepinsight/conference_question`,
-  // deepinsightConferenceQuestion: `${api_host}/deepinsight/conference_question`,
-  deepinsightChat:
-    process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3001/api/deepinsight/chat'
-      : `${api_host}/deepinsight/chat`,
-  // deepinsightChat: `${api_host}/deepinsight/chat`,
+  // deepinsightConferenceQuestion:
+  //   process.env.NODE_ENV === 'development'
+  //     ? 'http://10.17.0.5:3001/api/deepinsight/conference_question'
+  //     : `${api_host}/deepinsight/conference_question`,
+  deepinsightConferenceQuestion: `${api_host}/deepinsight/conference_question`,
+  // deepinsightChat:
+  //   process.env.NODE_ENV === 'development'
+  //     ? 'http://10.17.0.5:3001/api/deepinsight/chat'
+  //     : `${api_host}/deepinsight/chat`,
+  deepinsightChat: `${api_host}/deepinsight/chat`,
   deleteMessage: `${api_host}/conversation/delete_msg`,
   thumbup: `${api_host}/conversation/thumbup`,
   tts: `${api_host}/conversation/tts`,
   ask: `${api_host}/conversation/ask`,
   mindmap: `${api_host}/conversation/mindmap`,
   getRelatedQuestions: `${api_host}/conversation/related_questions`,
+  // deepinsight PDF and PPT generation
+  generatePdf: `${api_host}/deepinsight/pdf/generate`,
+  generatePpt: `${api_host}/deepinsight/ppt/generate`,
   // chat for external
   createToken: `${api_host}/api/new_token`,
   listToken: `${api_host}/api/token_list`,

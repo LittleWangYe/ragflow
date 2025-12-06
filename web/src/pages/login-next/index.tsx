@@ -7,6 +7,7 @@ import {
   useRegister,
 } from '@/hooks/login-hooks';
 import { useSystemConfig } from '@/hooks/system-hooks';
+import { useInitDefaultDialogs } from '@/hooks/use-init-default-dialogs';
 import { rsaPsw } from '@/utils';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -40,16 +41,19 @@ const Login = () => {
   const { channels, loading: channelsLoading } = useLoginChannels();
   const { login: loginWithChannel, loading: loginWithChannelLoading } =
     useLoginWithChannel();
+  const { initializeDefaultDialogs, isLoading: isInitializing } =
+    useInitDefaultDialogs();
   const { t } = useTranslation('translation', { keyPrefix: 'login' });
   const [isLoginPage, setIsLoginPage] = useState(true);
 
-  const [isUserInteracting, setIsUserInteracting] = useState(true);
+  const [isUserInteracting] = useState(true);
 
   const loading =
     signLoading ||
     registerLoading ||
     channelsLoading ||
-    loginWithChannelLoading;
+    loginWithChannelLoading ||
+    isInitializing;
   const { config } = useSystemConfig();
   const registerEnabled = config?.registerEnabled !== 0;
 
@@ -106,7 +110,7 @@ const Login = () => {
     resolver: zodResolver(FormSchema),
   });
 
-  const onCheck = async (params) => {
+  const onCheck = async (params: any) => {
     console.log('params', params);
     try {
       // const params = await form.validateFields();
@@ -119,7 +123,12 @@ const Login = () => {
           password: rsaPassWord,
         });
         if (code === 0) {
-          navigate('/');
+          // Initialize default dialogs after successful login
+          const result = await initializeDefaultDialogs();
+          if (result.success) {
+            // Navigate to datasets page (first menu item) after dialogs are initialized
+            navigate('/datasets');
+          }
         }
       } else {
         const code = await register({
