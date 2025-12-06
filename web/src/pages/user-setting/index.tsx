@@ -10,15 +10,19 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { useNavigatePage } from '@/hooks/logic-hooks/navigate-hooks';
 import { cn } from '@/lib/utils';
 import { House } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'umi';
 import styles from './index.less';
 
 const UserSetting = () => {
   const { t } = useTranslation();
-  const { navigateToHome } = useNavigatePage();
+  const navigate = useNavigate();
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
 
   return (
     <section className="flex flex-col h-full">
@@ -26,7 +30,7 @@ const UserSetting = () => {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink onClick={navigateToHome}>
+              <BreadcrumbLink onClick={handleGoBack}>
                 <House className="size-4" />
               </BreadcrumbLink>
             </BreadcrumbItem>
