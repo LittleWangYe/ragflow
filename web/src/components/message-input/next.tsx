@@ -1,6 +1,5 @@
 'use client';
 
-import { DeepinsightKbSelector } from '@/components/deepinsight-kb-selector';
 import {
   FileUpload,
   FileUploadDropzone,
@@ -13,9 +12,9 @@ import {
   FileUploadTrigger,
   type FileUploadProps,
 } from '@/components/file-upload';
+import { KbWebSearchSelector } from '@/components/kb-web-search-selector';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
 import { t } from 'i18next';
 import { CircleStop, Paperclip, Send, Upload, X } from 'lucide-react';
 import * as React from 'react';
@@ -34,6 +33,7 @@ interface IProps {
   isUploading?: boolean;
   showAttachmentButton?: boolean;
   isDeepinsightMode?: boolean;
+  conversationApi?: string;
   selectedKbs?: string[];
   webSearch?: boolean;
   onKbChange?: (kbIds: string[]) => void;
@@ -55,6 +55,7 @@ export function NextMessageInput({
   showUploadIcon = true,
   showAttachmentButton = true,
   isDeepinsightMode = false,
+  conversationApi = 'deepinsightChat',
   selectedKbs = [],
   webSearch = false,
   onKbChange,
@@ -166,25 +167,13 @@ export function NextMessageInput({
           {/* Left: deepinsight controls (KB selector + web search toggle) */}
           {isDeepinsightMode && (
             <div className="flex items-center gap-2 flex-1">
-              <div className="flex-1 min-w-0" style={{ maxWidth: '300px' }}>
-                <DeepinsightKbSelector
-                  selectedKbs={selectedKbs}
-                  onChange={onKbChange}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => onWebSearchChange?.(!webSearch)}
-                className={cn(
-                  'px-3 py-1.5 rounded text-sm border whitespace-nowrap',
-                  {
-                    'bg-blue-600 text-white border-blue-600': webSearch,
-                    'bg-white text-gray-700 border-gray-200': !webSearch,
-                  },
-                )}
-              >
-                联网搜索
-              </button>
+              <KbWebSearchSelector
+                selectedKbs={selectedKbs}
+                webSearch={webSearch}
+                onKbChange={onKbChange}
+                onWebSearchChange={onWebSearchChange}
+                conversationApi={conversationApi}
+              />
             </div>
           )}
 

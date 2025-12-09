@@ -75,7 +75,7 @@ export default function Chat() {
   return (
     <section className="h-full flex flex-col overflow-hidden">
       {/* Breadcrumb 和嵌入网站代码按钮已隐藏 */}
-      <div className="flex flex-1 min-h-0 pr-5">
+      <div className="flex flex-1 min-h-0">
         <Sessions
           hasSingleChatBox={hasSingleChatBox}
           handleConversationCardClick={handleConversationCardClick}
@@ -87,44 +87,46 @@ export default function Chat() {
           }
         ></Sessions>
 
-        <Card className="flex-1 min-w-0 bg-transparent border h-full">
-          <CardContent className="flex flex-col p-0 h-full min-h-0">
-            <Card className="flex flex-col flex-1 bg-transparent min-w-0 min-h-0">
-              <CardHeader
-                className={cn('p-4', { 'border-b': hasSingleChatBox })}
-              >
-                <CardTitle className="flex justify-between items-center text-base">
-                  <div className="truncate">{conversation.name}</div>
-                  <Button
-                    variant={'ghost'}
-                    onClick={switchDebugMode}
-                    disabled={
-                      hasThreeChatBox ||
-                      isEmpty(conversationId) ||
-                      isNew === 'true'
+        <div className="flex-1 min-w-0 flex gap-0 m-5 border rounded-lg overflow-hidden">
+          <Card className="flex-1 min-w-0 bg-transparent border-0 h-full">
+            <CardContent className="flex flex-col p-0 h-full min-h-0">
+              <Card className="flex flex-col flex-1 bg-transparent border-0 min-w-0 min-h-0">
+                <CardHeader
+                  className={cn('p-4', { 'border-b': hasSingleChatBox })}
+                >
+                  <CardTitle className="flex justify-between items-center text-base">
+                    <div className="truncate">{conversation.name}</div>
+                    <Button
+                      variant={'ghost'}
+                      onClick={switchDebugMode}
+                      disabled={
+                        hasThreeChatBox ||
+                        isEmpty(conversationId) ||
+                        isNew === 'true'
+                      }
+                    >
+                      <ArrowUpRight /> {t('chat.multipleModels')}
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 p-0 min-h-0">
+                  <SingleChatBox
+                    controller={controller}
+                    stopOutputMessage={stopOutputMessage}
+                    thinkingPanelVisible={
+                      isDeepinsightMode ? thinkingPanelVisible : true
                     }
-                  >
-                    <ArrowUpRight /> {t('chat.multipleModels')}
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 p-0 min-h-0">
-                <SingleChatBox
-                  controller={controller}
-                  stopOutputMessage={stopOutputMessage}
-                  thinkingPanelVisible={
-                    isDeepinsightMode ? thinkingPanelVisible : true
-                  }
-                ></SingleChatBox>
-              </CardContent>
-            </Card>
-            {settingVisible && (
-              <ChatSettings
-                switchSettingVisible={switchSettingVisible}
-              ></ChatSettings>
-            )}
-          </CardContent>
-        </Card>
+                  ></SingleChatBox>
+                </CardContent>
+              </Card>
+            </CardContent>
+          </Card>
+          {settingVisible && (
+            <ChatSettings
+              switchSettingVisible={switchSettingVisible}
+            ></ChatSettings>
+          )}
+        </div>
       </div>
       {embedVisible && (
         <EmbedDialog

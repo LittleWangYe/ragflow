@@ -297,14 +297,14 @@ export function SingleChatBox({
 
   return (
     <section className="flex flex-col h-full overflow-hidden">
-      <div className="flex flex-1 min-h-0 gap-3 p-5">
+      <div className="flex flex-1 min-h-0 p-5">
         {/* 左边：聊天内容和输入框 */}
-        <div className="flex-1 flex flex-col min-h-0 min-w-0">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 mr-3">
           <div
             ref={messageContainerRef}
             className="flex-1 overflow-auto min-h-0"
           >
-            <div className="w-full pr-5">
+            <div className="w-full">
               {filteredMessages?.map((message, i) => {
                 // Only show completion buttons on the last assistant message
                 const isLastAssistantMessage =
@@ -369,6 +369,7 @@ export function SingleChatBox({
               removeFile={removeFile}
               showAttachmentButton={!isAnyDeepinsightMode}
               isDeepinsightMode={isAnyDeepinsightMode}
+              conversationApi={conversationApi}
               selectedKbs={selectedKbs}
               onKbChange={setSelectedKbs}
               webSearch={webSearch}
