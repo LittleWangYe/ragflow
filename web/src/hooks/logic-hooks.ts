@@ -4,6 +4,7 @@ import { LanguageTranslationMap } from '@/constants/common';
 import { ResponseType } from '@/interfaces/database/base';
 import { IAnswer, Message } from '@/interfaces/database/chat';
 import { IKnowledgeFile } from '@/interfaces/database/knowledge';
+import i18n from '@/locales/config';
 import { IClientConversation, IMessage } from '@/pages/chat/interface';
 import api from '@/utils/api';
 import { getAuthorization } from '@/utils/authorization-util';
@@ -267,6 +268,20 @@ export const useSendMessageWithSse = (
         // 请求成功，清除超时计时器
         clearTimeout(timeoutId);
 
+        // 检查 HTTP 响应状态码
+        if (!response.ok) {
+          const errorText = `HTTP Error: ${response.status} ${response.statusText}`;
+          console.error('Stream request failed:', errorText);
+          message.error(
+            i18n.t('message.networkAnomaly') || 'Network error occurred',
+          );
+          setDoneValue(body, true);
+          return {
+            data: { code: response.status, message: errorText },
+            response,
+          };
+        }
+
         const res = response.clone().json();
 
         const reader = response?.body
@@ -274,6 +289,7 @@ export const useSendMessageWithSse = (
           .pipeThrough(new EventSourceParserStream())
           .getReader();
 
+        let hasError = false;
         while (true) {
           try {
             const x = await reader?.read();
@@ -287,8 +303,15 @@ export const useSendMessageWithSse = (
                 const val = JSON.parse(value?.data || '');
                 const d = val?.data;
 
-                // 调试日志：打印原始数据
-                if (isDeepinsightApi && typeof d !== 'boolean') {
+                // 检查是否有错误响应码
+                if (val?.code && val.code !== 0) {
+                  hasError = true;
+                  console.error('Stream data error:', val.code, val.message);
+                  if (val.code === 500 || val.code >= 500) {
+                    message.error(
+                      val.message || i18n.t('message.requestError'),
+                    );
+                  }
                 }
 
                 if (typeof d !== 'boolean') {
@@ -310,7 +333,8 @@ export const useSendMessageWithSse = (
                   setAnswer(parsedAnswer);
                 }
               } catch (e) {
-                // Swallow parse errors silently
+                console.error('Error parsing stream data:', e);
+                // Continue processing other chunks
               }
             }
           } catch (e) {
@@ -318,6 +342,14 @@ export const useSendMessageWithSse = (
               console.log('Request was aborted by user or logic.');
               break;
             }
+            // 流读取错误可能表示连接断开
+            console.error('Stream read error:', e);
+            message.error(
+              i18n.t('message.networkAnomaly') || 'Connection interrupted',
+            );
+            setDoneValue(body, true);
+            hasError = true;
+            break;
           }
         }
         setDoneValue(body, true);
@@ -329,14 +361,23 @@ export const useSendMessageWithSse = (
 
         // 处理超时和其他错误
         if (e instanceof DOMException && e.name === 'AbortError') {
-          console.error(
-            'Request timeout or aborted:',
-            isDeepinsightApi
-              ? 'DeepInsight API (1 hour timeout)'
-              : 'Standard API (5 min timeout)',
+          const timeoutMsg = isDeepinsightApi
+            ? 'DeepInsight API (1 hour timeout)'
+            : 'Standard API (5 min timeout)';
+          console.error('Request timeout or aborted:', timeoutMsg);
+          message.error(i18n.t('message.requestTimeout') || 'Request timeout');
+        } else if (e instanceof TypeError && e.message === 'Failed to fetch') {
+          // 网络错误或CORS问题
+          console.error('Network fetch error:', e);
+          message.error(
+            i18n.t('message.networkAnomalyDescription') ||
+              'Network connection failed',
           );
+        } else {
+          // 其他未知错误
+          console.error('Unexpected error in stream request:', e);
+          message.error(i18n.t('message.requestError') || 'An error occurred');
         }
-        // Swallow fetch errors silently
       }
     },
     [initializeSseRef, setDoneValue, resetAnswer, isDeepinsightApi, url],

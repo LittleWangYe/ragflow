@@ -5,6 +5,7 @@ import {
   useSelectDerivedMessages,
   useSendMessageWithSse,
 } from '@/hooks/logic-hooks';
+import { useStreamErrorHandler } from '@/hooks/use-stream-error-handler';
 import { Message } from '@/interfaces/database/chat';
 import { message } from 'antd';
 import { get } from 'lodash';
@@ -52,6 +53,7 @@ export const useSendSharedMessage = () => {
   const { send, answer, done, stopOutputMessage } = useSendMessageWithSse(
     `/api/v1/${from === SharedFrom.Agent ? 'agentbots' : 'chatbots'}/${conversationId}/completions`,
   );
+  const { retryStream, resetRetryCount } = useStreamErrorHandler();
   const {
     derivedMessages,
     removeLatestMessage,
@@ -63,23 +65,43 @@ export const useSendSharedMessage = () => {
     removeAllMessagesExceptFirst,
   } = useSelectDerivedMessages();
   const [hasError, setHasError] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   const sendMessage = useCallback(
     async (message: Message, id?: string) => {
-      const res = await send({
-        conversation_id: id ?? conversationId,
-        quote: true,
-        question: message.content,
-        session_id: get(derivedMessages, '0.session_id'),
-      });
+      try {
+        setIsRetrying(false);
+        const res = await send({
+          conversation_id: id ?? conversationId,
+          quote: true,
+          question: message.content,
+          session_id: get(derivedMessages, '0.session_id'),
+        });
 
-      if (isCompletionError(res)) {
-        // cancel loading
+        if (isCompletionError(res)) {
+          // Cancel loading and restore message
+          setValue(message.content);
+          removeLatestMessage();
+          setHasError(true);
+        } else {
+          setHasError(false);
+          resetRetryCount();
+        }
+      } catch (error) {
+        console.error('Error sending message:', error);
         setValue(message.content);
         removeLatestMessage();
+        setHasError(true);
       }
     },
-    [send, conversationId, derivedMessages, setValue, removeLatestMessage],
+    [
+      send,
+      conversationId,
+      derivedMessages,
+      setValue,
+      removeLatestMessage,
+      resetRetryCount,
+    ],
   );
 
   const handleSendMessage = useCallback(
@@ -98,13 +120,21 @@ export const useSendSharedMessage = () => {
   );
 
   const fetchSessionId = useCallback(async () => {
-    const payload = { question: '' };
-    const ret = await send({ ...payload, ...data });
-    if (isCompletionError(ret)) {
-      message.error(ret?.data.message);
+    try {
+      const payload = { question: '' };
+      const ret = await send({ ...payload, ...data });
+      if (isCompletionError(ret)) {
+        console.error('Failed to fetch session:', ret?.data?.message);
+        message.error(ret?.data.message || 'Failed to initialize session');
+        setHasError(true);
+      } else {
+        setHasError(false);
+      }
+    } catch (error) {
+      console.error('Error fetching session ID:', error);
       setHasError(true);
     }
-  }, [send]);
+  }, [send, data]);
 
   useEffect(() => {
     fetchSessionId();
@@ -138,6 +168,14 @@ export const useSendSharedMessage = () => {
     [addNewestQuestion, done, handleSendMessage, setValue, value],
   );
 
+  const handleRetry = useCallback(() => {
+    setIsRetrying(true);
+    retryStream(fetchSessionId).catch((error) => {
+      console.error('Retry failed:', error);
+      setHasError(true);
+    });
+  }, [retryStream, fetchSessionId]);
+
   return {
     handlePressEnter,
     handleInputChange,
@@ -146,6 +184,8 @@ export const useSendSharedMessage = () => {
     loading: false,
     derivedMessages,
     hasError,
+    isRetrying,
+    handleRetry,
     stopOutputMessage,
     scrollRef,
     messageContainerRef,

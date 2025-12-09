@@ -123,6 +123,18 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
           signal: controller?.signal || sseRef.current?.signal,
         });
 
+        // 检查 HTTP 响应状态码
+        if (!response.ok) {
+          const errorText = `HTTP Error: ${response.status} ${response.statusText}`;
+          console.error('Stream request failed:', errorText);
+          message.error('Network error occurred. Please try again.');
+          setDone(true);
+          return {
+            data: { code: response.status, message: errorText },
+            response,
+          };
+        }
+
         const res = response.clone().json();
 
         const reader = response?.body
@@ -130,6 +142,7 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
           .pipeThrough(new EventSourceParserStream())
           .getReader();
 
+        let hasStreamError = false;
         while (true) {
           try {
             const x = await reader?.read();
@@ -144,8 +157,16 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
                 const val = JSON.parse(value?.data || '');
 
                 console.info('data:', val);
-                if (val.code === 500) {
-                  message.error(val.message);
+
+                // 检查错误响应
+                if (val.code === 500 || (val.code && val.code >= 500)) {
+                  hasStreamError = true;
+                  message.error(val.message || 'Server error occurred');
+                  continue;
+                }
+
+                if (val.code !== 0 && val.code) {
+                  console.warn('Stream response error:', val.code, val.message);
                 }
 
                 setAnswerList((list) => {
@@ -154,7 +175,8 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
                   return nextList;
                 });
               } catch (e) {
-                console.warn(e);
+                console.warn('Error parsing stream data:', e);
+                // Continue processing other chunks
               }
             }
           } catch (e) {
@@ -162,6 +184,12 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
               console.log('Request was aborted by user or logic.');
               break;
             }
+            // 流读取错误
+            console.error('Stream read error:', e);
+            message.error('Connection interrupted. Please try again.');
+            setDone(true);
+            hasStreamError = true;
+            break;
           }
         }
         console.info('done?');
@@ -172,7 +200,18 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
         setDone(true);
         resetAnswerList();
 
-        console.warn(e);
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          console.error('Request timeout or aborted');
+          message.error('Request timeout. Please try again.');
+        } else if (e instanceof TypeError && e.message === 'Failed to fetch') {
+          console.error('Network fetch error:', e);
+          message.error(
+            'Network connection failed. Please check your connection.',
+          );
+        } else {
+          console.warn('Unexpected error in stream request:', e);
+          message.error('An error occurred. Please try again.');
+        }
       }
     },
     [initializeSseRef, url, resetAnswerList],
