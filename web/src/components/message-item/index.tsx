@@ -391,8 +391,8 @@ const MessageItem = ({
           <Flex
             vertical
             gap={8}
-            flex={isAssistant ? 1 : 'none'}
-            style={{ minWidth: 0 }}
+            flex={isAssistant ? 1 : 'auto'}
+            style={{ minWidth: 0, maxWidth: '100%' }}
             align={isAssistant ? 'flex-start' : 'flex-end'}
           >
             <Space>
