@@ -73,10 +73,10 @@ export const useServerConnectionMonitor = (
         // Retry after 2 seconds
         checkTimeoutRef.current = setTimeout(checkServerHealth, 2000);
       } else {
-        message.error(
-          i18n.t('message.serverUnavailable') ||
-            'Server is currently unavailable. Please try again later.',
-        );
+        // message.error(
+        //   i18n.t('message.serverUnavailable') ||
+        //     'Server is currently unavailable. Please try again later.',
+        // );
       }
     }
   }, [url]);
@@ -161,10 +161,10 @@ export const useStreamErrorHandler = () => {
           console.error(`Stream retry attempt ${attempt + 1} failed:`, error);
 
           if (attempt === maxRetries) {
-            message.error(
-              i18n.t('message.requestFailed') ||
-                'Request failed after multiple retries. Please try again later.',
-            );
+            // message.error(
+            //   i18n.t('message.requestFailed') ||
+            //     'Request failed after multiple retries. Please try again later.',
+            // );
           }
         }
       }

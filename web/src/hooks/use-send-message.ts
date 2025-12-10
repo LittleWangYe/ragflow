@@ -1,4 +1,3 @@
-import message from '@/components/ui/message';
 import { Authorization } from '@/constants/authorization';
 import { IReferenceObject } from '@/interfaces/database/chat';
 import { BeginQuery } from '@/pages/agent/interface';
@@ -127,7 +126,7 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
         if (!response.ok) {
           const errorText = `HTTP Error: ${response.status} ${response.statusText}`;
           console.error('Stream request failed:', errorText);
-          message.error('Network error occurred. Please try again.');
+          // message.error('Network error occurred. Please try again.');
           setDone(true);
           return {
             data: { code: response.status, message: errorText },
@@ -161,7 +160,7 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
                 // 检查错误响应
                 if (val.code === 500 || (val.code && val.code >= 500)) {
                   hasStreamError = true;
-                  message.error(val.message || 'Server error occurred');
+                  // message.error(val.message || 'Server error occurred');
                   continue;
                 }
 
@@ -186,7 +185,7 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
             }
             // 流读取错误
             console.error('Stream read error:', e);
-            message.error('Connection interrupted. Please try again.');
+            // message.error('Connection interrupted. Please try again.');
             setDone(true);
             hasStreamError = true;
             break;
@@ -202,15 +201,15 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
 
         if (e instanceof DOMException && e.name === 'AbortError') {
           console.error('Request timeout or aborted');
-          message.error('Request timeout. Please try again.');
+          // message.error('Request timeout. Please try again.');
         } else if (e instanceof TypeError && e.message === 'Failed to fetch') {
           console.error('Network fetch error:', e);
-          message.error(
-            'Network connection failed. Please check your connection.',
-          );
+          // message.error(
+          //   'Network connection failed. Please check your connection.',
+          // );
         } else {
           console.warn('Unexpected error in stream request:', e);
-          message.error('An error occurred. Please try again.');
+          // message.error('An error occurred. Please try again.');
         }
       }
     },

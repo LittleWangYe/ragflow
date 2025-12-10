@@ -381,18 +381,25 @@ const MessageItem = ({
         >
           {visibleAvatar &&
             (item.role === MessageType.User ? (
-              <Avatar size={40} src={avatar ?? '/logo.svg'} />
+              <Avatar
+                size={40}
+                src={avatar ?? '/logo.svg'}
+                style={{ flexShrink: 0 }}
+              />
             ) : avatarDialog ? (
-              <Avatar size={40} src={avatarDialog} />
+              <Avatar size={40} src={avatarDialog} style={{ flexShrink: 0 }} />
             ) : (
-              <AssistantIcon />
+              <AssistantIcon style={{ flexShrink: 0 }} />
             ))}
 
           <Flex
             vertical
             gap={8}
-            flex={isAssistant ? 1 : 'auto'}
-            style={{ minWidth: 0, maxWidth: '100%' }}
+            flex={isAssistant ? 1 : 'none'}
+            style={{
+              minWidth: 0,
+              maxWidth: isAssistant ? '100%' : 'calc(100% - 60px)',
+            }}
             align={isAssistant ? 'flex-start' : 'flex-end'}
           >
             <Space>
@@ -509,6 +516,18 @@ const MessageItem = ({
                     progress={isAssistant ? (item.data?.progress ?? 0) : 0}
                     elapsedTime={item.data?.elapsedTime}
                     clickDocumentButton={clickDocumentButton}
+                    isDeepinsightConference={isDeepinsightConference}
+                    contentArray={
+                      isDeepinsightConference
+                        ? Array.isArray(item.data?.answer)
+                          ? item.data.answer
+                          : Array.isArray(item.data?.answerArray)
+                            ? item.data.answerArray
+                            : Array.isArray(item.content)
+                              ? item.content
+                              : undefined
+                        : undefined
+                    }
                   ></MarkdownContent>
 
                   {/* Show total elapsed time only after loading is complete */}

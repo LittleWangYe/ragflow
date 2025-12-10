@@ -4,7 +4,6 @@ import { LanguageTranslationMap } from '@/constants/common';
 import { ResponseType } from '@/interfaces/database/base';
 import { IAnswer, Message } from '@/interfaces/database/chat';
 import { IKnowledgeFile } from '@/interfaces/database/knowledge';
-import i18n from '@/locales/config';
 import { IClientConversation, IMessage } from '@/pages/chat/interface';
 import api from '@/utils/api';
 import { getAuthorization } from '@/utils/authorization-util';
@@ -272,9 +271,9 @@ export const useSendMessageWithSse = (
         if (!response.ok) {
           const errorText = `HTTP Error: ${response.status} ${response.statusText}`;
           console.error('Stream request failed:', errorText);
-          message.error(
-            i18n.t('message.networkAnomaly') || 'Network error occurred',
-          );
+          // message.error(
+          //   i18n.t('message.networkAnomaly') || 'Network error occurred',
+          // );
           setDoneValue(body, true);
           return {
             data: { code: response.status, message: errorText },
@@ -308,9 +307,9 @@ export const useSendMessageWithSse = (
                   hasError = true;
                   console.error('Stream data error:', val.code, val.message);
                   if (val.code === 500 || val.code >= 500) {
-                    message.error(
-                      val.message || i18n.t('message.requestError'),
-                    );
+                    // message.error(
+                    //   val.message || i18n.t('message.requestError'),
+                    // );
                   }
                 }
 
@@ -344,9 +343,9 @@ export const useSendMessageWithSse = (
             }
             // 流读取错误可能表示连接断开
             console.error('Stream read error:', e);
-            message.error(
-              i18n.t('message.networkAnomaly') || 'Connection interrupted',
-            );
+            // message.error(
+            //   i18n.t('message.networkAnomaly') || 'Connection interrupted',
+            // );
             setDoneValue(body, true);
             hasError = true;
             break;
@@ -365,18 +364,18 @@ export const useSendMessageWithSse = (
             ? 'DeepInsight API (1 hour timeout)'
             : 'Standard API (5 min timeout)';
           console.error('Request timeout or aborted:', timeoutMsg);
-          message.error(i18n.t('message.requestTimeout') || 'Request timeout');
+          // message.error(i18n.t('message.requestTimeout') || 'Request timeout');
         } else if (e instanceof TypeError && e.message === 'Failed to fetch') {
           // 网络错误或CORS问题
           console.error('Network fetch error:', e);
-          message.error(
-            i18n.t('message.networkAnomalyDescription') ||
-              'Network connection failed',
-          );
+          // message.error(
+          //   i18n.t('message.networkAnomalyDescription') ||
+          //     'Network connection failed',
+          // );
         } else {
           // 其他未知错误
           console.error('Unexpected error in stream request:', e);
-          message.error(i18n.t('message.requestError') || 'An error occurred');
+          // message.error(i18n.t('message.requestError') || 'An error occurred');
         }
       }
     },

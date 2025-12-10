@@ -94,10 +94,10 @@ app.post(
   (req: Request, res: Response) => {
     console.log('📡 Conference Question 请求开始...');
 
-    // 使用相对于当前工作目录的路径（项目根目录）
+    // ragflowFiles 在 ragflow 的上一级（与 web 同级的 ragflow 的兄弟目录）
     const responseFile = path.resolve(
       process.cwd(),
-      'response_confusionQuestion3.txt',
+      '../../ragflowFiles/response_confusionQuestion3.txt',
     );
 
     // 检查文件是否存在
@@ -145,7 +145,7 @@ app.post(
           lineIndex++;
 
           // 使用 setTimeout 每隔 100ms 发送下一行
-          setTimeout(sendNext, 20);
+          setTimeout(sendNext, 100);
         } else if (!res.writableEnded) {
           // 所有数据发送完成
           console.log(`✅ 全部 ${sentCount} 行数据发送完成`);
@@ -184,8 +184,11 @@ app.post(
 app.post('/api/deepinsight/chat', (req: Request, res: Response) => {
   console.log('📡 DeepInsight Chat 请求开始...');
 
-  // 使用相对于当前工作目录的路径（项目根目录）
-  const responseFile = path.resolve(process.cwd(), 'response_chat1.txt');
+  // ragflowFiles 在 ragflow 的上一级（与 web 同级的 ragflow 的兄弟目录）
+  const responseFile = path.resolve(
+    process.cwd(),
+    '../../ragflowFiles/response_chat2.txt',
+  );
 
   // 检查文件是否存在
   if (!fs.existsSync(responseFile)) {
@@ -232,7 +235,7 @@ app.post('/api/deepinsight/chat', (req: Request, res: Response) => {
         lineIndex++;
 
         // 使用 setTimeout 每隔 500ms 发送下一行
-        setTimeout(sendNext, 20);
+        setTimeout(sendNext, 100);
       } else if (!res.writableEnded) {
         // 所有数据发送完成
         console.log(`✅ 全部 ${sentCount} 行数据发送完成`);

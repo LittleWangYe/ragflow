@@ -7,7 +7,6 @@ import {
 } from '@/hooks/logic-hooks';
 import { useStreamErrorHandler } from '@/hooks/use-stream-error-handler';
 import { Message } from '@/interfaces/database/chat';
-import { message } from 'antd';
 import { get } from 'lodash';
 import trim from 'lodash/trim';
 import { useCallback, useEffect, useState } from 'react';
@@ -125,7 +124,7 @@ export const useSendSharedMessage = () => {
       const ret = await send({ ...payload, ...data });
       if (isCompletionError(ret)) {
         console.error('Failed to fetch session:', ret?.data?.message);
-        message.error(ret?.data.message || 'Failed to initialize session');
+        // message.error(ret?.data.message || 'Failed to initialize session');
         setHasError(true);
       } else {
         setHasError(false);

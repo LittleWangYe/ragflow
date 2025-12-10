@@ -43,6 +43,8 @@ const MarkdownContent = ({
   progressSteps,
   progress,
   elapsedTime,
+  isDeepinsightConference = false,
+  contentArray,
 }: {
   content: string;
   loading: boolean;
@@ -51,11 +53,26 @@ const MarkdownContent = ({
   progress?: number;
   elapsedTime?: number;
   clickDocumentButton?: (documentId: string, chunk: IReferenceChunk) => void;
+  isDeepinsightConference?: boolean;
+  contentArray?: any[];
 }) => {
   const { t } = useTranslation();
   const { setDocumentIds, data: fileThumbnails } =
     useFetchDocumentThumbnailsByIds();
   const [thinkingExpanded, setThinkingExpanded] = useState(false);
+
+  // 提取进度消息（任何 percentage 的 progress 类型）
+  const progressMessage = useMemo(() => {
+    if (!isDeepinsightConference || !Array.isArray(contentArray)) {
+      return null;
+    }
+    return contentArray.find(
+      (item: any) =>
+        typeof item?.percentage === 'number' &&
+        item?.process === 'progress' &&
+        item?.type === 'content_markdown',
+    );
+  }, [isDeepinsightConference, contentArray]);
 
   // 确保 content 是字符串
   const safeContent = useMemo(() => {
@@ -616,8 +633,79 @@ const MarkdownContent = ({
         />
       )}
 
-      {/* 3. 提示栏 */}
-      {progressSteps &&
+      {/* 2.5. 处理进度 - 仅在 deepinsightConferenceQuestion 场景下显示进度消息 */}
+      {isDeepinsightConference && progressMessage && (
+        <div
+          style={{
+            margin: '12px 0',
+            padding: '12px',
+            backgroundColor: '#fafafa',
+            borderRadius: '4px',
+          }}
+        >
+          <div
+            style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}
+          >
+            处理进度：
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '8px',
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                height: '8px',
+                backgroundColor: '#e8e8e8',
+                borderRadius: '4px',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  backgroundColor: '#52c41a',
+                  width: `${progressMessage.percentage}%`,
+                  transition: 'width 0.3s',
+                  borderRadius: '4px',
+                }}
+              />
+            </div>
+            <span
+              style={{
+                minWidth: '40px',
+                textAlign: 'right',
+                fontSize: '12px',
+              }}
+            >
+              {progressMessage.percentage}%
+            </span>
+          </div>
+          <div
+            style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}
+          >
+            提示信息：
+          </div>
+          <div
+            style={{
+              paddingLeft: '10px',
+              borderLeft: '3px solid #52c41a',
+              fontSize: '12px',
+              color: '#666',
+            }}
+          >
+            {progressMessage.content}
+          </div>
+        </div>
+      )}
+
+      {/* 3. 提示栏 - 仅在 deepinsightConferenceQuestion 场景下显示 */}
+      {isDeepinsightConference &&
+        progressSteps &&
         Array.isArray(progressSteps) &&
         progressSteps.length > 0 && (
           <div className={styles.progressTip}>

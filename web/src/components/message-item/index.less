@@ -9,6 +9,10 @@
     width: fit-content;
     max-width: 100%;
   }
+  .messageItemSectionRight {
+    width: fit-content;
+    max-width: 100%;
+  }
   .messageItemContent {
     display: flex;
     gap: 20px;
@@ -16,9 +20,12 @@
     max-width: 100%;
     align-items: flex-start;
     box-sizing: border-box;
+    overflow: hidden;
   }
   .messageItemContentReverse {
     flex-direction: row-reverse;
+    justify-content: flex-end;
+    overflow: hidden;
   }
 
   .messageTextBase() {
@@ -56,9 +63,12 @@
     background-color: rgba(255, 255, 255, 0.3);
     word-break: break-word;
     text-align: justify;
-    width: 100%;
+    width: auto;
     max-width: 100%;
     box-sizing: border-box;
+    display: inline-block;
+    word-wrap: break-word;
+    white-space: normal;
   }
   .messageEmpty {
     width: 300px;
@@ -78,13 +88,17 @@
 .messageItemLeft {
   text-align: left;
   .messageItemContent {
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
+    overflow: hidden;
   }
 }
 
 .messageItemRight {
   text-align: right;
   .messageItemContent {
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
+    overflow: hidden;
   }
 }
