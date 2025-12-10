@@ -126,11 +126,11 @@ export default {
   //     ? 'http://10.17.0.5:3001/api/deepinsight/conference_question'
   //     : `${api_host}/deepinsight/conference_question`,
   deepinsightConferenceQuestion: `${api_host}/deepinsight/conference_question`,
-  deepinsightChat:
-    process.env.NODE_ENV === 'development'
-      ? 'http://10.17.0.5:3001/api/deepinsight/chat'
-      : `${api_host}/deepinsight/chat`,
-  // deepinsightChat: `${api_host}/deepinsight/chat`,
+  // deepinsightChat:
+  //   process.env.NODE_ENV === 'development'
+  //     ? 'http://10.17.0.5:3001/api/deepinsight/chat'
+  //     : `${api_host}/deepinsight/chat`,
+  deepinsightChat: `${api_host}/deepinsight/chat`,
   deleteMessage: `${api_host}/conversation/delete_msg`,
   thumbup: `${api_host}/conversation/thumbup`,
   tts: `${api_host}/conversation/tts`,

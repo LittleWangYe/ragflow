@@ -187,7 +187,7 @@ app.post('/api/deepinsight/chat', (req: Request, res: Response) => {
   // ragflowFiles 在 ragflow 的上一级（与 web 同级的 ragflow 的兄弟目录）
   const responseFile = path.resolve(
     process.cwd(),
-    '../../ragflowFiles/response_chat2.txt',
+    '../../ragflowFiles/response_chat.txt',
   );
 
   // 检查文件是否存在

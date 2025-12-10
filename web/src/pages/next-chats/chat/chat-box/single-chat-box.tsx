@@ -13,7 +13,7 @@ import {
 import { useFetchUserInfo } from '@/hooks/user-setting-hooks';
 import { AnswerItem } from '@/interfaces/database/chat';
 import { buildMessageUuidWithRole } from '@/utils/chat';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 import {
   useGetSendButtonDisabled,
@@ -181,15 +181,24 @@ export function SingleChatBox({
   // (debug logging moved down to after filteredMessages declaration)
 
   // Helper function to check if an item should be filtered out
-  const shouldFilterOutItem = (item: any): boolean => {
-    if (!item) return true;
-    // In deepinsight mode, only keep items with process==='' (empty string) AND type!=='result'
-    // This filters out all items that have a non-empty process and result type items
-    const isEmptyProcess = item.process === '';
-    const isResultType = item.type === 'result';
+  const shouldFilterOutItem = useCallback(
+    (item: any): boolean => {
+      if (!item) return true;
 
-    return !isEmptyProcess || isResultType;
-  };
+      // In deepinsight mode, only show items with process='' and type!='result'
+      // Filter out think, progress, and result type items
+      if (isDeepinsightMode) {
+        // Only keep items where process is empty string (the final complete content) and not result type
+        const isResultType = item.type === 'result';
+        return item.process !== '' || isResultType;
+      }
+
+      // In other modes, filter out only 'result' type items
+      const isResultType = item.type === 'result';
+      return isResultType;
+    },
+    [isDeepinsightMode],
+  );
 
   // Helper function to strip think/result tags from content string
   const stripThinkAndResultTags = (content: string): string => {
@@ -210,7 +219,7 @@ export function SingleChatBox({
     }
 
     return derivedMessages
-      ?.map((msg) => {
+      ?.map((msg, msgIndex) => {
         if (msg.role !== MessageType.Assistant) {
           return msg;
         }
@@ -259,9 +268,19 @@ export function SingleChatBox({
 
         const filtered = recursiveFilter(answers);
 
+        // Check if this is the last assistant message
+        const isLastMessage = msgIndex === derivedMessages.length - 1;
+
         if (filtered.length === 0) {
-          // If all content is filtered out, return null to hide this message
-          return null;
+          // For the last message during loading, keep it with empty content (to show placeholder)
+          // For other messages, hide them
+          if (!isLastMessage || !sendLoading) {
+            return null;
+          }
+
+          // Keep last message but with empty content during loading
+          newMsg.content = '';
+          return newMsg;
         }
 
         // Ensure filtered items are used for rendering: write filtered array to content
@@ -293,7 +312,7 @@ export function SingleChatBox({
           content: stripThinkAndResultTags(contentStr),
         };
       });
-  }, [derivedMessages, isDeepinsightMode]);
+  }, [derivedMessages, isDeepinsightMode, shouldFilterOutItem, sendLoading]);
 
   return (
     <section className="flex flex-col h-full overflow-hidden">
@@ -304,51 +323,64 @@ export function SingleChatBox({
             ref={messageContainerRef}
             className="flex-1 overflow-auto min-h-0"
           >
-            <div className="w-full">
-              {filteredMessages?.map((message, i) => {
-                // Only show completion buttons on the last assistant message
-                const isLastAssistantMessage =
-                  message.role === MessageType.Assistant &&
-                  filteredMessages.length - 1 === i;
+            {(() => {
+              return (
+                <>
+                  <div className="w-full">
+                    {filteredMessages?.map((message, i) => {
+                      // Check if this is the last assistant message in filtered list
+                      const isLastAssistantMessage =
+                        message.role === MessageType.Assistant &&
+                        filteredMessages.length - 1 === i;
 
-                return (
-                  <MessageItem
-                    loading={
-                      message.role === MessageType.Assistant &&
-                      sendLoading &&
-                      filteredMessages.length - 1 === i
-                    }
-                    key={buildMessageUuidWithRole(message)}
-                    item={message}
-                    nickname={userInfo.nickname}
-                    avatar={userInfo.avatar}
-                    avatarDialog={currentDialog.icon}
-                    reference={buildMessageItemReference(
-                      {
-                        message: filteredMessages,
-                        reference: conversation.reference,
-                      },
-                      message,
-                    )}
-                    clickDocumentButton={clickDocumentButton}
-                    index={i}
-                    removeMessageById={removeMessageById}
-                    regenerateMessage={regenerateMessage}
-                    sendLoading={sendLoading}
-                    isDeepinsightChat={isDeepinsightMode}
-                    isDeepinsightConference={isDeepinsightConferenceMode}
-                    isCompleted={
-                      isLastAssistantMessage && isCompleted
-                        ? isCompleted
-                        : false
-                    }
-                    conversationId={conversationId}
-                    onSendMessage={handleStartResearchFromPlan}
-                  ></MessageItem>
-                );
-              })}
-            </div>
-            <div ref={scrollRef} />
+                      // In deepinsight mode, show loading on the last message until content arrives
+                      const shouldShowLoading =
+                        isDeepinsightMode &&
+                        sendLoading &&
+                        isLastAssistantMessage
+                          ? true
+                          : !isDeepinsightMode &&
+                            message.role === MessageType.Assistant &&
+                            sendLoading &&
+                            filteredMessages.length - 1 === i;
+
+                      return (
+                        <MessageItem
+                          loading={shouldShowLoading}
+                          key={buildMessageUuidWithRole(message)}
+                          item={message}
+                          nickname={userInfo.nickname}
+                          avatar={userInfo.avatar}
+                          avatarDialog={currentDialog.icon}
+                          reference={buildMessageItemReference(
+                            {
+                              message: filteredMessages,
+                              reference: conversation.reference,
+                            },
+                            message,
+                          )}
+                          clickDocumentButton={clickDocumentButton}
+                          index={i}
+                          removeMessageById={removeMessageById}
+                          regenerateMessage={regenerateMessage}
+                          sendLoading={sendLoading}
+                          isDeepinsightChat={isDeepinsightMode}
+                          isDeepinsightConference={isDeepinsightConferenceMode}
+                          isCompleted={
+                            isLastAssistantMessage && isCompleted
+                              ? isCompleted
+                              : false
+                          }
+                          conversationId={conversationId}
+                          onSendMessage={handleStartResearchFromPlan}
+                        ></MessageItem>
+                      );
+                    })}
+                  </div>
+                  <div ref={scrollRef} />
+                </>
+              );
+            })()}
           </div>
 
           <div className="mt-3 flex-shrink-0">
