@@ -15,6 +15,10 @@ import { useFetchChatAppList } from '@/hooks/chat-hooks';
 import { useChangeLanguage } from '@/hooks/logic-hooks';
 import { useNavigatePage } from '@/hooks/logic-hooks/navigate-hooks';
 import { useNavigateWithFromState } from '@/hooks/route-hook';
+import {
+  getCurrentScenarioKey,
+  getScenarioSavedState,
+} from '@/hooks/use-multi-scenario-route';
 import { useNavigationLock } from '@/hooks/use-navigation-lock';
 import { useFetchUserInfo } from '@/hooks/user-setting-hooks';
 import { Routes } from '@/routes';
@@ -176,15 +180,48 @@ export function Header() {
         t('message.waitForStreamComplete') ||
           '当前正在获取会话内容,请停止或者等待会话完成后再试',
       );
-      // 重要：不做任何其他操作，Segmented 的 disabled 会阻止状态变化
       return;
     }
 
-    // 启动导航锁定，禁用菜单点击直到页面加载完成
-    startNavigation(pathStr);
+    // 🔑 根据目标菜单项确定目标场景
+    let finalPath = pathStr;
+
+    // 提取菜单项中的 conversationApi 参数
+    const menuParams = new URLSearchParams(pathStr.split('?')[1] || '');
+    const targetConversationApi = menuParams.get('conversationApi') || '';
+
+    // 获取目标场景的 key
+    const targetScenarioKey = getCurrentScenarioKey(targetConversationApi);
+
+    // 从 scenarioStateMap 中获取该场景保存的状态
+    const savedState = getScenarioSavedState(targetScenarioKey);
+
+    console.log(`[Header] Menu navigation:`, {
+      targetScene: targetScenarioKey,
+      targetConversationApi,
+      savedState,
+      menuPath: pathStr,
+    });
+
+    // 如果目标场景有保存的 conversationId，附加到 URL 中
+    if (savedState?.conversationId && !menuParams.has('conversationId')) {
+      const separator = pathStr.includes('?') ? '&' : '?';
+      finalPath = `${pathStr}${separator}conversationId=${savedState.conversationId}`;
+
+      console.log(
+        `[Header] Restored conversationId for scene "${targetScenarioKey}":`,
+        {
+          conversationId: savedState.conversationId,
+          finalPath,
+        },
+      );
+    }
+
+    // 启动导航锁定
+    startNavigation(finalPath);
 
     // 执行导航
-    navigate(pathStr);
+    navigate(finalPath);
   };
 
   const handleLogoClick = useCallback(() => {
