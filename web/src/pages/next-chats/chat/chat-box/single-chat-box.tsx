@@ -142,16 +142,6 @@ export function SingleChatBox({
       return undefined;
     }
 
-    // DEBUG: Log the structure of lastMessage for conference mode
-    if (isDeepinsightConferenceMode && process.env.NODE_ENV === 'development') {
-      console.log('[Conference Mode] lastMessage structure:', {
-        content: lastMessage?.content,
-        data: lastMessage?.data,
-        isContentArray: Array.isArray(lastMessage?.content),
-        contentType: typeof lastMessage?.content,
-      });
-    }
-
     // For deepinsightConferenceQuestion, extract content from complete conversation data
     // The content array contains all the message items including completion indicators
     if (isDeepinsightConferenceMode && Array.isArray(lastMessage?.content)) {
