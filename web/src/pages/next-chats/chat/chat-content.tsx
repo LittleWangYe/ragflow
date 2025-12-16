@@ -16,7 +16,7 @@ import {
 import { useMultiScenarioRoute } from '@/hooks/use-multi-scenario-route';
 import { cn } from '@/lib/utils';
 import { isEmpty } from 'lodash';
-import { ArrowUpRight, LogOut } from 'lucide-react';
+import { ArrowUpRight, Loader2, LogOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'umi';
@@ -31,7 +31,8 @@ import { useSwitchDebugMode } from './use-switch-debug-mode';
 export function ChatContent() {
   const { id } = useParams();
   const { t } = useTranslation();
-  const { data: conversation } = useFetchConversation();
+  const { data: conversation, loading: conversationLoading } =
+    useFetchConversation();
   const { saveCurrentScenarioState } = useMultiScenarioRoute();
 
   const { handleConversationCardClick, controller, stopOutputMessage } =
@@ -118,13 +119,19 @@ export function ChatContent() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 min-h-0">
-                  <SingleChatBox
-                    controller={controller}
-                    stopOutputMessage={stopOutputMessage}
-                    thinkingPanelVisible={
-                      isDeepinsightMode ? thinkingPanelVisible : true
-                    }
-                  ></SingleChatBox>
+                  {conversationLoading ? (
+                    <div className="flex flex-col items-center justify-center h-full gap-4">
+                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <SingleChatBox
+                      controller={controller}
+                      stopOutputMessage={stopOutputMessage}
+                      thinkingPanelVisible={
+                        isDeepinsightMode ? thinkingPanelVisible : true
+                      }
+                    ></SingleChatBox>
+                  )}
                 </CardContent>
               </Card>
             </CardContent>

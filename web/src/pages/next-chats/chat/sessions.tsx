@@ -9,7 +9,7 @@ import {
   useGetChatSearchParams,
 } from '@/hooks/use-chat-request';
 import { cn } from '@/lib/utils';
-import { PanelLeftClose, PanelRightClose, Plus } from 'lucide-react';
+import { Loader2, PanelLeftClose, PanelRightClose, Plus } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHandleClickConversationCard } from '../hooks/use-click-card';
@@ -41,6 +41,7 @@ export function Sessions({
     addTemporaryConversation,
     handleInputChange,
     searchString,
+    loading: conversationLoading,
   } = useSelectDerivedConversationList();
   const { data } = useFetchDialog();
   const { visible, switchVisible } = useSetModalState(true);
@@ -97,22 +98,32 @@ export function Sessions({
         ></SearchInput>
       </div>
       <div className="space-y-4 flex-1 overflow-auto">
-        {conversationList.map((x) => (
-          <Card
-            key={x.id}
-            onClick={handleCardClick(x.id, x.is_new)}
-            className={cn('cursor-pointer bg-transparent', {
-              'bg-bg-card': conversationId === x.id,
-            })}
-          >
-            <CardContent className="px-3 py-2 flex justify-between items-center group gap-1">
-              <div className="truncate">{x.name}</div>
-              <ConversationDropdown conversation={x}>
-                <MoreButton></MoreButton>
-              </ConversationDropdown>
-            </CardContent>
-          </Card>
-        ))}
+        {conversationLoading ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : conversationList.length > 0 ? (
+          conversationList.map((x) => (
+            <Card
+              key={x.id}
+              onClick={handleCardClick(x.id, x.is_new)}
+              className={cn('cursor-pointer bg-transparent', {
+                'bg-bg-card': conversationId === x.id,
+              })}
+            >
+              <CardContent className="px-3 py-2 flex justify-between items-center group gap-1">
+                <div className="truncate">{x.name}</div>
+                <ConversationDropdown conversation={x}>
+                  <MoreButton></MoreButton>
+                </ConversationDropdown>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="text-center text-text-secondary text-sm py-8">
+            {t('chat.noConversations')}
+          </div>
+        )}
       </div>
       <div className="space-y-2 py-2 flex-shrink-0">
         {isDeepinsightMode && onToggleThinkingPanel && (
