@@ -402,7 +402,7 @@ export function SingleChatBox({
 
         {/* 右边的思考面板 - 在 deepinsight 模式下显示 */}
         {isDeepinsightMode && thinkingPanelVisible && (
-          <div className="w-96 min-w-96 border-l border-gray-200 overflow-y-auto h-full bg-white flex-shrink-0 flex flex-col">
+          <div className="flex-1 border-l border-gray-200 overflow-y-auto h-full bg-white flex-shrink-0 flex flex-col">
             <DeepInsightThinkingPanel
               data={thinkingData}
               // deepinsightChat 模式下不显示右侧思考/结果面板的加载框
