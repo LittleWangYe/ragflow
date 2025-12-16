@@ -1,11 +1,11 @@
 import { MoreButton } from '@/components/more-button';
-import { RAGFlowAvatar } from '@/components/ragflow-avatar';
+// import { RAGFlowAvatar } from '@/components/ragflow-avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { SearchInput } from '@/components/ui/input';
 import { useSetModalState } from '@/hooks/common-hooks';
 import {
-  useFetchDialog,
+  // useFetchDialog,
   useGetChatSearchParams,
 } from '@/hooks/use-chat-request';
 import { cn } from '@/lib/utils';
@@ -43,7 +43,7 @@ export function Sessions({
     searchString,
     loading: conversationLoading,
   } = useSelectDerivedConversationList();
-  const { data } = useFetchDialog();
+  // const { data } = useFetchDialog();
   const { visible, switchVisible } = useSetModalState(true);
 
   const handleCardClick = useCallback(
@@ -66,21 +66,31 @@ export function Sessions({
 
   return (
     <section className="p-6 w-[296px] flex flex-col h-full overflow-hidden">
-      <section className="flex items-center text-base justify-between gap-2">
-        <div className="flex gap-3 items-center min-w-0">
+      <section
+        className="flex items-center text-base justify-between gap-2"
+        style={{ marginBottom: '16px' }}
+      >
+        {/* <div className="flex gap-3 items-center min-w-0">
           <RAGFlowAvatar
             avatar={data.icon}
             name={data.name}
             className="size-8"
           ></RAGFlowAvatar>
           <span className="flex-1 truncate">{data.name}</span>
-        </div>
+        </div> */}
+        <Button
+          variant={'ghost'}
+          onClick={addTemporaryConversation}
+          style={{ backgroundColor: '#1356EB', color: 'white' }}
+        >
+          <Plus></Plus>新建会话
+        </Button>
         <PanelLeftClose
           className="cursor-pointer size-4"
           onClick={switchVisible}
         />
       </section>
-      <div className="flex justify-between items-center mb-4 pt-10">
+      {/* <div className="flex justify-between items-center mb-4 pt-10">
         <div className="flex items-center gap-3">
           <span className="text-base font-bold">{t('chat.conversations')}</span>
           <span className="text-text-secondary text-xs">
@@ -90,7 +100,7 @@ export function Sessions({
         <Button variant={'ghost'} onClick={addTemporaryConversation}>
           <Plus></Plus>
         </Button>
-      </div>
+      </div> */}
       <div className="pb-4">
         <SearchInput
           onChange={handleInputChange}

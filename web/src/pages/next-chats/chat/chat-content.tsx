@@ -6,7 +6,7 @@
 import EmbedDialog from '@/components/embed-dialog';
 import { useShowEmbedModal } from '@/components/embed-dialog/use-show-embed-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { SharedFrom } from '@/constants/chat';
 import { useSetModalState } from '@/hooks/common-hooks';
 import {
@@ -14,9 +14,7 @@ import {
   useGetChatSearchParams,
 } from '@/hooks/use-chat-request';
 import { useMultiScenarioRoute } from '@/hooks/use-multi-scenario-route';
-import { cn } from '@/lib/utils';
-import { isEmpty } from 'lodash';
-import { ArrowUpRight, Loader2, LogOut } from 'lucide-react';
+import { Loader2, LogOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'umi';
@@ -100,7 +98,7 @@ export function ChatContent() {
           <Card className="flex-1 min-w-0 bg-transparent border-0 h-full">
             <CardContent className="flex flex-col p-0 h-full min-h-0">
               <Card className="flex flex-col flex-1 bg-transparent border-0 min-w-0 min-h-0">
-                <CardHeader
+                {/* <CardHeader
                   className={cn('p-4', { 'border-b': hasSingleChatBox })}
                 >
                   <CardTitle className="flex justify-between items-center text-base">
@@ -117,7 +115,7 @@ export function ChatContent() {
                       <ArrowUpRight /> {t('chat.multipleModels')}
                     </Button>
                   </CardTitle>
-                </CardHeader>
+                </CardHeader> */}
                 <CardContent className="flex-1 p-0 min-h-0">
                   {conversationLoading ? (
                     <div className="flex flex-col items-center justify-center h-full gap-4">

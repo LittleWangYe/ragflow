@@ -1,4 +1,4 @@
-import { IconFontFill } from '@/components/icon-font';
+// import { IconFontFill } from '@/components/icon-font';
 import { RAGFlowAvatar } from '@/components/ragflow-avatar';
 import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,6 @@ import { message } from 'antd';
 import { camelCase } from 'lodash';
 import {
   ChevronDown,
-  CircleHelp,
   // Cpu,
   // File,
   // House,
@@ -145,7 +144,7 @@ export function Header() {
     if (pathOnlyMatch) return pathOnlyMatch.path;
 
     // 3. 默认 fallback 到第一个菜单项
-    return tagsData.length > 0 ? tagsData[0].path : Routes.Root;
+    return tagsData.length > 0 ? tagsData[0].path : Routes.Datasets;
   }, [currentFullPath, pathname, tagsData]);
 
   // 构建 Segmented options
@@ -225,7 +224,7 @@ export function Header() {
   };
 
   const handleLogoClick = useCallback(() => {
-    navigate(Routes.Root);
+    navigate(Routes.Datasets);
   }, [navigate]);
 
   return (
@@ -254,7 +253,7 @@ export function Header() {
       />
 
       <div className="flex items-center gap-5 text-text-badge">
-        <a
+        {/* <a
           target="_blank"
           href="https://discord.com/invite/NjYzJD3GM3"
           rel="noreferrer"
@@ -267,7 +266,7 @@ export function Header() {
           rel="noreferrer"
         >
           <IconFontFill name="GitHub"></IconFontFill>
-        </a>
+        </a> */}
         <DropdownMenu>
           <DropdownMenuTrigger>
             <div className="flex items-center gap-1">
@@ -283,9 +282,9 @@ export function Header() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button variant={'ghost'} onClick={handleDocHelpCLick}>
+        {/* <Button variant={'ghost'} onClick={handleDocHelpCLick}>
           <CircleHelp />
-        </Button>
+        </Button> */}
         <Button variant={'ghost'} onClick={onThemeClick}>
           {theme === 'light' ? <Sun /> : <Moon />}
         </Button>
