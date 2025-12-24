@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'umi';
 import { useHandleClickConversationCard } from '../hooks/use-click-card';
+import { useSelectDerivedConversationList } from '../hooks/use-select-conversation-list';
 import { ChatSettings } from './app-settings/chat-settings';
 import { MultipleChatBox } from './chat-box/multiple-chat-box';
 import { SingleChatBox } from './chat-box/single-chat-box';
@@ -32,6 +33,9 @@ export function ChatContent() {
   const { data: conversation, loading: conversationLoading } =
     useFetchConversation();
   const { saveCurrentScenarioState } = useMultiScenarioRoute();
+
+  // 获取会话列表，用于确定虚拟会话时的备选方案
+  const { list: conversationList } = useSelectDerivedConversationList();
 
   const { handleConversationCardClick, controller, stopOutputMessage } =
     useHandleClickConversationCard();
@@ -168,8 +172,15 @@ export function ChatContent() {
       isNew,
       conversationApi,
     });
-    saveCurrentScenarioState();
-  }, [conversationId, isNew, conversationApi, saveCurrentScenarioState]);
+    // 传入会话列表，用于在虚拟会话时替换为第一条真实会话
+    saveCurrentScenarioState(conversationList);
+  }, [
+    conversationId,
+    isNew,
+    conversationApi,
+    saveCurrentScenarioState,
+    conversationList,
+  ]);
 
   return isDebugMode ? debugModeContent : chatContent;
 }

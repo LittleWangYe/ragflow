@@ -192,26 +192,51 @@ export const useMultiScenarioRoute = () => {
   }, [urlScenarioKey, conversationId, rawConversationApi, dialogId, navigate]);
 
   // 保存当前场景的状态
-  const saveCurrentScenarioState = useCallback(() => {
-    // 只保存当前有效的（非空）conversationId
-    // 这样避免保存空状态，导致第二次切换时恢复失败
-    if (conversationId) {
-      const state: ScenarioRouteState = {
-        conversationId,
-        isNew,
-        conversationApi,
-      };
-      console.log(
-        `[useMultiScenarioRoute-${urlScenarioKey}] 💾 Saving state (only if conversationId is not empty):`,
-        state,
-      );
-      scenarioStateMap.set(urlScenarioKey, state);
-    } else {
-      console.log(
-        `[useMultiScenarioRoute-${urlScenarioKey}] ⚠️  Not saving state: conversationId is empty`,
-      );
-    }
-  }, [urlScenarioKey, conversationId, isNew, conversationApi]);
+  const saveCurrentScenarioState = useCallback(
+    (conversationList?: Array<{ id: string; is_new?: boolean }>) => {
+      // 如果当前是虚拟会话（isNew=true），则改为保存会话列表的第一条会话
+      let finalConversationId = conversationId;
+      let finalIsNew = isNew;
+
+      if (isNew === 'true' && conversationList && conversationList.length > 0) {
+        // 找到第一条真实会话（is_new 不为 true）
+        const firstRealConversation = conversationList.find(
+          (conv) => conv.is_new !== true,
+        );
+        if (firstRealConversation) {
+          finalConversationId = firstRealConversation.id;
+          finalIsNew = '';
+          console.log(
+            `[useMultiScenarioRoute-${urlScenarioKey}] 🔄 Current is virtual session, replacing with first real conversation:`,
+            {
+              originalId: conversationId,
+              replacedId: finalConversationId,
+            },
+          );
+        }
+      }
+
+      // 只保存当前有效的（非空）conversationId
+      // 这样避免保存空状态，导致第二次切换时恢复失败
+      if (finalConversationId) {
+        const state: ScenarioRouteState = {
+          conversationId: finalConversationId,
+          isNew: finalIsNew,
+          conversationApi,
+        };
+        console.log(
+          `[useMultiScenarioRoute-${urlScenarioKey}] 💾 Saving state (only if conversationId is not empty):`,
+          state,
+        );
+        scenarioStateMap.set(urlScenarioKey, state);
+      } else {
+        console.log(
+          `[useMultiScenarioRoute-${urlScenarioKey}] ⚠️  Not saving state: conversationId is empty`,
+        );
+      }
+    },
+    [urlScenarioKey, conversationId, isNew, conversationApi],
+  );
 
   // 获取当前场景的完整状态
   const getCurrentScenarioState = useCallback(() => {
