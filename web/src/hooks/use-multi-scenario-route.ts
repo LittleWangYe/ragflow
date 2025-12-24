@@ -194,6 +194,21 @@ export const useMultiScenarioRoute = () => {
   // 保存当前场景的状态
   const saveCurrentScenarioState = useCallback(
     (conversationList?: Array<{ id: string; is_new?: boolean }>) => {
+      // 如果当前是虚拟会话（isNew=true）且真实会话列表无数据，则不保存该虚拟会话
+      if (
+        isNew === 'true' &&
+        (!conversationList || conversationList.length === 0)
+      ) {
+        console.log(
+          `[useMultiScenarioRoute-${urlScenarioKey}] 🚫 Current is virtual session and no real conversations exist, not saving state`,
+          {
+            conversationId,
+            conversationListLength: conversationList?.length || 0,
+          },
+        );
+        return;
+      }
+
       // 如果当前是虚拟会话（isNew=true），则改为保存会话列表的第一条会话
       let finalConversationId = conversationId;
       let finalIsNew = isNew;
