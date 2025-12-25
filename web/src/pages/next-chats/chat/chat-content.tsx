@@ -14,6 +14,7 @@ import {
   useGetChatSearchParams,
 } from '@/hooks/use-chat-request';
 import { useMultiScenarioRoute } from '@/hooks/use-multi-scenario-route';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, LogOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,11 +28,14 @@ import { Sessions } from './sessions';
 import { useAddChatBox } from './use-add-box';
 import { useSwitchDebugMode } from './use-switch-debug-mode';
 
-export function ChatContent() {
+export function ChatContent({ isActive }: { isActive?: boolean }) {
   const { id } = useParams();
   const { t } = useTranslation();
-  const { data: conversation, loading: conversationLoading } =
-    useFetchConversation();
+  const {
+    data: conversation,
+    loading: conversationLoading,
+    refetch,
+  } = useFetchConversation();
   const { saveCurrentScenarioState } = useMultiScenarioRoute();
 
   // 获取会话列表，用于确定虚拟会话时的备选方案
@@ -161,18 +165,7 @@ export function ChatContent() {
   // 🔑 当会话改变时，自动保存当前场景的状态
   // 这样切换回来时能恢复该会话
   useEffect(() => {
-    const scenarioName =
-      conversationApi === 'deepinsightChat'
-        ? 'deepinsight'
-        : conversationApi === 'deepinsightConferenceQuestion'
-          ? 'conference'
-          : 'ask';
-    console.log(`[ChatContent-${scenarioName}] 💾 Saving state`, {
-      conversationId,
-      isNew,
-      conversationApi,
-    });
-    // 传入会话列表，用于在虚拟会话时替换为第一条真实会话
+    // 保存当前场景状态（不打印调试日志）
     saveCurrentScenarioState(conversationList);
   }, [
     conversationId,
@@ -181,6 +174,26 @@ export function ChatContent() {
     saveCurrentScenarioState,
     conversationList,
   ]);
+
+  // 使用 react-query 的 client（在组件体顶部作为 hook 调用）
+  const queryClient = useQueryClient();
+
+  // 当 URL 中的 conversationId 变化时，如果这是活跃实例，精确地 invalidate 目标 query，触发该实例重新 fetch
+  useEffect(() => {
+    const { isConversationIdExist } = require('@/pages/next-chats/utils');
+
+    if (!isActive) return;
+
+    if (conversationId && isConversationIdExist(conversationId)) {
+      // 精确失效包含 conversationApi 的 key，避免触发其它场景
+      const apiParam = conversationApi || '';
+      queryClient.invalidateQueries({
+        queryKey: ['fetchConversation', conversationId, apiParam],
+      });
+    }
+  }, [conversationId, conversationApi, isActive, queryClient]);
+
+  // NOTE: Removed explicit refetch here; cache invalidation in route hook will trigger the fetch for the target scenario.
 
   return isDebugMode ? debugModeContent : chatContent;
 }
