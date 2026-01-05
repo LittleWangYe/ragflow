@@ -1,7 +1,7 @@
 // import { IconFontFill } from '@/components/icon-font';
 import { RAGFlowAvatar } from '@/components/ragflow-avatar';
 import { useTheme } from '@/components/theme-provider';
-import { Button } from '@/components/ui/button';
+// import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,18 +32,15 @@ import {
   // House,
   Library,
   MessageSquareText,
-  Moon,
-  // Search,
-  Sun,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'umi';
 import { BellButton } from './bell-button';
 
-const handleDocHelpCLick = () => {
-  window.open('https://ragflow.io/docs/dev/category/guides', 'target');
-};
+// const handleDocHelpCLick = () => {
+//   window.open('https://ragflow.io/docs/dev/category/guides', 'target');
+// };
 
 export function Header() {
   const { t } = useTranslation();
@@ -52,9 +49,14 @@ export function Header() {
   const { navigateToOldProfile } = useNavigatePage();
 
   const changeLanguage = useChangeLanguage();
-  const { setTheme, theme } = useTheme();
+  const { setTheme } = useTheme();
 
   const { isStreaming } = useStreamingRequest();
+
+  // Set theme to light on component mount
+  useEffect(() => {
+    setTheme(ThemeEnum.Light);
+  }, [setTheme]);
 
   const {
     data: { language = 'English', avatar, nickname },
@@ -94,9 +96,9 @@ export function Header() {
     label: <span>{LanguageMap[x as keyof typeof LanguageMap]}</span>,
   }));
 
-  const onThemeClick = useCallback(() => {
-    setTheme(theme === ThemeEnum.Dark ? ThemeEnum.Light : ThemeEnum.Dark);
-  }, [setTheme, theme]);
+  // const onThemeClick = useCallback(() => {
+  //   setTheme(theme === ThemeEnum.Dark ? ThemeEnum.Light : ThemeEnum.Dark);
+  // }, [setTheme, theme]);
 
   // Static menu items
   const staticTags = useMemo(
@@ -285,9 +287,9 @@ export function Header() {
         {/* <Button variant={'ghost'} onClick={handleDocHelpCLick}>
           <CircleHelp />
         </Button> */}
-        <Button variant={'ghost'} onClick={onThemeClick}>
+        {/* <Button variant={'ghost'} onClick={onThemeClick}>
           {theme === 'light' ? <Sun /> : <Moon />}
-        </Button>
+        </Button> */}
         <BellButton></BellButton>
         <div className="relative">
           <RAGFlowAvatar

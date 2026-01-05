@@ -100,6 +100,9 @@ const RootProvider = ({ children }: React.PropsWithChildren) => {
     const lng = storage.getLanguage();
     if (lng) {
       i18n.changeLanguage(lng);
+    } else {
+      // If no language is saved, default to Simplified Chinese
+      i18n.changeLanguage('zh');
     }
   }, []);
 
