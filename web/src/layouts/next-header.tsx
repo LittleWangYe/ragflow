@@ -2,12 +2,6 @@
 import { RAGFlowAvatar } from '@/components/ragflow-avatar';
 import { useTheme } from '@/components/theme-provider';
 // import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Segmented, SegmentedValue } from '@/components/ui/segmented';
 import { LanguageList, LanguageMap, ThemeEnum } from '@/constants/common';
 import { useStreamingRequest } from '@/contexts/streaming-request-context';
@@ -24,9 +18,7 @@ import { useFetchUserInfo } from '@/hooks/user-setting-hooks';
 import { Routes } from '@/routes';
 import { generateChatMenuItems } from '@/utils/chat-menu';
 import { message } from 'antd';
-import { camelCase } from 'lodash';
 import {
-  ChevronDown,
   // Cpu,
   // File,
   // House,
@@ -269,7 +261,7 @@ export function Header() {
         >
           <IconFontFill name="GitHub"></IconFontFill>
         </a> */}
-        <DropdownMenu>
+        {/* <DropdownMenu>
           <DropdownMenuTrigger>
             <div className="flex items-center gap-1">
               {t(`common.${camelCase(language)}`)}
@@ -283,7 +275,7 @@ export function Header() {
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu> */}
         {/* <Button variant={'ghost'} onClick={handleDocHelpCLick}>
           <CircleHelp />
         </Button> */}
