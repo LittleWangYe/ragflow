@@ -196,16 +196,16 @@ const MarkdownContent = ({
 
   const processMarkdownPart = useCallback(
     (text: string) => {
-      let processed = DOMPurify.sanitize(text, {
-        ADD_TAGS: ['think', 'section'],
-        ADD_ATTR: ['class', 'href', 'title', 'alt', 'src'],
-        ALLOW_DATA_ATTR: false,
-      });
+      // let processed = DOMPurify.sanitize(text, {
+      //   ADD_TAGS: ['think', 'section'],
+      //   ADD_ATTR: ['class', 'href', 'title', 'alt', 'src'],
+      //   ALLOW_DATA_ATTR: false,
+      // });
 
-      if (processed === '') {
-        processed = t('chat.searching');
+      if (text.trim() === '') {
+        return t('chat.searching');
       }
-      const nextText = replaceTextByOldReg(processed);
+      const nextText = replaceTextByOldReg(text);
       return pipe(replaceThinkToSection, preprocessLaTeX)(nextText);
     },
     [t],
