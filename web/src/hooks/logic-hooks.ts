@@ -1,6 +1,7 @@
 import { Authorization } from '@/constants/authorization';
 import { MessageType } from '@/constants/chat';
 import { LanguageTranslationMap } from '@/constants/common';
+import { cleanupAfterStreamingRequest } from '@/hooks/use-aggressive-memory-cleanup';
 import { ResponseType } from '@/interfaces/database/base';
 import { IAnswer, Message } from '@/interfaces/database/chat';
 import { IKnowledgeFile } from '@/interfaces/database/knowledge';
@@ -276,7 +277,7 @@ export const useSendMessageWithSse = (
           // );
           setDoneValue(body, true);
           return {
-            data: { code: response.status, message: errorText },
+            data: { code: response.status, message: errorText } as any,
             response,
           };
         }
@@ -288,68 +289,75 @@ export const useSendMessageWithSse = (
           .pipeThrough(new EventSourceParserStream())
           .getReader();
 
-        let hasError = false;
-        while (true) {
-          try {
-            const x = await reader?.read();
-            if (x) {
-              const { done, value } = x;
-              if (done) {
-                resetAnswer();
+        try {
+          while (true) {
+            try {
+              const x = await reader?.read();
+              if (x) {
+                const { done, value } = x;
+                if (done) {
+                  resetAnswer();
+                  break;
+                }
+                try {
+                  const val = JSON.parse(value?.data || '');
+                  const d = val?.data;
+
+                  // 检查是否有错误响应码
+                  if (val?.code && val.code !== 0) {
+                    console.error('Stream data error:', val.code, val.message);
+                    if (val.code === 500 || val.code >= 500) {
+                      // 只跳过服务器错误
+                      continue;
+                    }
+                  }
+
+                  if (typeof d !== 'boolean') {
+                    // 根据 API 类型选择解析器
+                    let parsedAnswer: IAnswer;
+                    if (isDeepinsightApi) {
+                      parsedAnswer = parseDeepinsightData(
+                        d,
+                        body?.conversation_id,
+                        body.chatBoxId,
+                      );
+                    } else {
+                      parsedAnswer = {
+                        ...d,
+                        conversationId: body?.conversation_id,
+                        chatBoxId: body.chatBoxId,
+                      };
+                    }
+                    setAnswer(parsedAnswer);
+                  }
+                } catch (e) {
+                  console.error('Error parsing stream data:', e);
+                  // Continue processing other chunks
+                }
+              }
+            } catch (e) {
+              if (e instanceof DOMException && e.name === 'AbortError') {
+                console.log('Request was aborted by user or logic.');
                 break;
               }
-              try {
-                const val = JSON.parse(value?.data || '');
-                const d = val?.data;
-
-                // 检查是否有错误响应码
-                if (val?.code && val.code !== 0) {
-                  hasError = true;
-                  console.error('Stream data error:', val.code, val.message);
-                  if (val.code === 500 || val.code >= 500) {
-                    // message.error(
-                    //   val.message || i18n.t('message.requestError'),
-                    // );
-                  }
-                }
-
-                if (typeof d !== 'boolean') {
-                  // 根据 API 类型选择解析器
-                  let parsedAnswer: IAnswer;
-                  if (isDeepinsightApi) {
-                    parsedAnswer = parseDeepinsightData(
-                      d,
-                      body?.conversation_id,
-                      body.chatBoxId,
-                    );
-                  } else {
-                    parsedAnswer = {
-                      ...d,
-                      conversationId: body?.conversation_id,
-                      chatBoxId: body.chatBoxId,
-                    };
-                  }
-                  setAnswer(parsedAnswer);
-                }
-              } catch (e) {
-                console.error('Error parsing stream data:', e);
-                // Continue processing other chunks
-              }
-            }
-          } catch (e) {
-            if (e instanceof DOMException && e.name === 'AbortError') {
-              console.log('Request was aborted by user or logic.');
+              // 流读取错误可能表示连接断开
+              console.error('Stream read error:', e);
+              setDoneValue(body, true);
               break;
             }
-            // 流读取错误可能表示连接断开
-            console.error('Stream read error:', e);
-            // message.error(
-            //   i18n.t('message.networkAnomaly') || 'Connection interrupted',
-            // );
-            setDoneValue(body, true);
-            hasError = true;
-            break;
           }
+        } finally {
+          // 确保清理Reader资源，释放内存
+          try {
+            if (reader) {
+              await reader.cancel();
+              console.debug('[Memory] Reader cancelled to release resources');
+            }
+          } catch (e) {
+            console.debug('[Memory] Error cancelling reader:', e);
+          }
+          // 流式请求完成后立即清理内存
+          await cleanupAfterStreamingRequest(100);
         }
         setDoneValue(body, true);
         resetAnswer();
@@ -550,7 +558,7 @@ export const useSelectDerivedMessages = () => {
   // Add the streaming message to the last item in the message list
   const addNewestAnswer = useCallback((answer: IAnswer) => {
     setDerivedMessages((pre) => {
-      return [
+      const newMessages = [
         ...(pre?.slice(0, -1) ?? []),
         {
           role: MessageType.Assistant,
@@ -565,6 +573,20 @@ export const useSelectDerivedMessages = () => {
           data: omit(answer, ['answer', 'reference', 'prompt', 'audio_binary']),
         },
       ];
+
+      // 限制消息数量：超过200条时，只保留最近100条（保留第一条用户消息+最近99条）
+      if (newMessages.length > 200) {
+        const trimmed = newMessages.slice(-100);
+        console.debug(
+          '[Memory] Trimmed messages from',
+          newMessages.length,
+          'to',
+          trimmed.length,
+        );
+        return trimmed;
+      }
+
+      return newMessages;
     });
   }, []);
 
@@ -573,8 +595,9 @@ export const useSelectDerivedMessages = () => {
     setDerivedMessages((pre) => {
       const idx = pre.findIndex((x) => x.id === answer.id);
 
+      let newMessages: any[];
       if (idx !== -1) {
-        return pre.map((x) => {
+        newMessages = pre.map((x) => {
           if (x.id === answer.id) {
             return {
               ...x,
@@ -592,23 +615,42 @@ export const useSelectDerivedMessages = () => {
           }
           return x;
         });
+      } else {
+        newMessages = [
+          ...(pre ?? []),
+          {
+            role: MessageType.Assistant,
+            content: answer.answer,
+            reference: answer.reference,
+            id: buildMessageUuid({
+              id: answer.id,
+              role: MessageType.Assistant,
+            }),
+            prompt: answer.prompt,
+            audio_binary: answer.audio_binary,
+            data: omit(answer, [
+              'answer',
+              'reference',
+              'prompt',
+              'audio_binary',
+            ]),
+          },
+        ];
       }
 
-      return [
-        ...(pre ?? []),
-        {
-          role: MessageType.Assistant,
-          content: answer.answer,
-          reference: answer.reference,
-          id: buildMessageUuid({
-            id: answer.id,
-            role: MessageType.Assistant,
-          }),
-          prompt: answer.prompt,
-          audio_binary: answer.audio_binary,
-          data: omit(answer, ['answer', 'reference', 'prompt', 'audio_binary']),
-        },
-      ];
+      // 限制消息数量：超过200条时，只保留最近100条
+      if (newMessages.length > 200) {
+        const trimmed = newMessages.slice(-100);
+        console.debug(
+          '[Memory] Trimmed messages from',
+          newMessages.length,
+          'to',
+          trimmed.length,
+        );
+        return trimmed;
+      }
+
+      return newMessages;
     });
   }, []);
 
