@@ -213,8 +213,10 @@ const MarkdownContent = ({
 
   useEffect(() => {
     const docAggs = reference?.doc_aggs;
-    setDocumentIds(Array.isArray(docAggs) ? docAggs.map((x) => x.doc_id) : []);
-  }, [reference, setDocumentIds]);
+    const docIds = Array.isArray(docAggs) ? docAggs.map((x) => x.doc_id) : [];
+    // 只在 doc_aggs 实际改变时才调用 setDocumentIds
+    setDocumentIds(docIds);
+  }, [reference?.doc_aggs, setDocumentIds]);
 
   const handleDocumentButtonClick = useCallback(
     (

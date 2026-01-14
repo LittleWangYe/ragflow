@@ -196,7 +196,10 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
                   try {
                     const line = buffer.trim();
                     if (line.startsWith('data: ')) {
-                      const val = JSON.parse(line.slice(6));
+                      // 移除 'data: ' 前缀并处理额外空格
+                      const jsonStr = line.replace(/^data:\s*/, '').trim();
+                      if (!jsonStr) continue;
+                      const val = JSON.parse(jsonStr);
                       // 检查错误响应 - 只跳过服务器错误
                       if (
                         !(val.code === 500 || (val.code && val.code >= 500))
@@ -231,7 +234,10 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
 
                   if (line.startsWith('data: ')) {
                     try {
-                      const val = JSON.parse(line.slice(6));
+                      // 移除 'data: ' 前缀并处理额外空格
+                      const jsonStr = line.replace(/^data:\s*/, '').trim();
+                      if (!jsonStr) continue;
+                      const val = JSON.parse(jsonStr);
 
                       // 检查错误响应 - 只跳过服务器错误（500+）
                       if (val.code === 500 || (val.code && val.code >= 500)) {
@@ -261,8 +267,10 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
                       console.error(
                         '[SSE] JSON parse error:',
                         parseErr,
-                        'line:',
-                        line.slice(0, 100),
+                        'line (first 150 chars):',
+                        line.slice(0, 150),
+                        'length:',
+                        line.length,
                       );
                     }
                   }
@@ -294,7 +302,7 @@ export const useSendMessageBySSE = (url: string = api.completeConversation) => {
         } else if (e instanceof TypeError && e.message === 'Failed to fetch') {
           console.error('Network fetch error:', e);
         } else {
-          console.warn('Unexpected error in stream request:', e);
+          console.warn('Unexpected error in stream request2:', e);
         }
       } finally {
         // 彻底清理所有资源

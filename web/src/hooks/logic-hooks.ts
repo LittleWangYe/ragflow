@@ -208,6 +208,8 @@ export const useSendMessageWithSse = (
     useSetDoneRecord();
   const timer = useRef<any>();
   const sseRef = useRef<AbortController>();
+  const answerRef = useRef<IAnswer>({} as IAnswer);
+  const lastSetAnswerTimeRef = useRef<number>(0);
 
   // 判断是否为 deepinsight 类型的 API
   const isDeepinsightApi = useMemo(() => {
@@ -249,6 +251,9 @@ export const useSendMessageWithSse = (
       initializeSseRef();
       try {
         setDoneValue(body, false);
+        // 重置 ref 缓存
+        answerRef.current = {} as IAnswer;
+        lastSetAnswerTimeRef.current = 0;
 
         // 为 deepinsight API 设置更长的超时时间（默认 5 分钟，deepinsight 可能需要 1 小时）
         const timeoutMs = isDeepinsightApi ? 3600000 : 300000; // 3600s = 1 hour, 300s = 5 min
@@ -282,8 +287,6 @@ export const useSendMessageWithSse = (
           };
         }
 
-        const res = response.clone().json();
-
         const reader = response?.body
           ?.pipeThrough(new TextDecoderStream())
           .pipeThrough(new EventSourceParserStream())
@@ -296,6 +299,13 @@ export const useSendMessageWithSse = (
               if (x) {
                 const { done, value } = x;
                 if (done) {
+                  // 流读取完成，设置最后一次的 answer
+                  if (
+                    answerRef.current &&
+                    Object.keys(answerRef.current).length > 0
+                  ) {
+                    setAnswer(answerRef.current);
+                  }
                   resetAnswer();
                   break;
                 }
@@ -328,7 +338,14 @@ export const useSendMessageWithSse = (
                         chatBoxId: body.chatBoxId,
                       };
                     }
-                    setAnswer(parsedAnswer);
+                    // 缓存最新的 answer 到 ref，使用节流避免频繁的状态更新
+                    answerRef.current = parsedAnswer;
+                    const now = Date.now();
+                    // 每 100ms 最多更新一次 state，减少重新渲染次数
+                    if (now - lastSetAnswerTimeRef.current >= 100) {
+                      setAnswer(parsedAnswer);
+                      lastSetAnswerTimeRef.current = now;
+                    }
                   }
                 } catch (e) {
                   console.error('Error parsing stream data:', e);
@@ -361,7 +378,7 @@ export const useSendMessageWithSse = (
         }
         setDoneValue(body, true);
         resetAnswer();
-        return { data: await res, response };
+        return { data: { code: 0, message: 'Success' } as any, response };
       } catch (e) {
         setDoneValue(body, true);
         resetAnswer();
@@ -382,7 +399,7 @@ export const useSendMessageWithSse = (
           // );
         } else {
           // 其他未知错误
-          console.error('Unexpected error in stream request:', e);
+          console.error('Unexpected error in stream request1:', e);
           // message.error(i18n.t('message.requestError') || 'An error occurred');
         }
       }
@@ -522,20 +539,30 @@ export const useSelectDerivedMessages = () => {
   const addNewestQuestion = useCallback(
     (message: Message, answer: string = '') => {
       setDerivedMessages((pre) => {
-        return [
-          ...pre,
-          {
-            ...message,
-            id: buildMessageUuid(message), // The message id is generated on the front end,
-            // and the message id returned by the back end is the same as the question id,
-            //  so that the pair of messages can be deleted together when deleting the message
-          },
-          {
-            role: MessageType.Assistant,
-            content: answer,
-            id: buildMessageUuid({ ...message, role: MessageType.Assistant }),
-          },
-        ];
+        // 确保用户消息有 ID（如果没有则生成）
+        const userMessage = {
+          ...message,
+          id: message.id || uuid(),
+        };
+
+        // 为占位符消息生成完全独立且唯一的 ID
+        let placeholderId = `placeholder_${Date.now()}_${uuid()}`;
+        let attempts = 0;
+        const existingIds = new Set(pre?.map((msg) => msg.id) ?? []);
+
+        // 确保占位符 ID 不会与任何现有消息冲突
+        while (existingIds.has(placeholderId) && attempts < 10) {
+          placeholderId = `placeholder_${Date.now()}_${uuid()}`;
+          attempts++;
+        }
+
+        const placeholderMessage = {
+          role: MessageType.Assistant,
+          content: answer,
+          id: placeholderId,
+        };
+
+        return [...pre, userMessage, placeholderMessage];
       });
     },
     [],
@@ -556,25 +583,173 @@ export const useSelectDerivedMessages = () => {
   }, []);
 
   // Add the streaming message to the last item in the message list
+  // 简化版本：占位符消息使用独立的 ID 前缀，永远不会冲突
   const addNewestAnswer = useCallback((answer: IAnswer) => {
     setDerivedMessages((pre) => {
+      if (!pre || pre.length === 0) {
+        return [
+          {
+            role: MessageType.Assistant,
+            content: answer.answer,
+            reference: answer.reference,
+            id: `answer_${answer.id}`, // 答案 ID 加上前缀，确保与用户消息区别
+            prompt: answer.prompt,
+            audio_binary: answer.audio_binary,
+            data: omit(answer, [
+              'answer',
+              'reference',
+              'prompt',
+              'audio_binary',
+            ]),
+          },
+        ];
+      }
+
+      // 答案消息的最终 ID：添加前缀以确保与用户消息区别
+      const finalMessageId = `answer_${answer.id}`;
+
+      // 首先检查是否已经存在这个答案 ID 的消息（流更新的情况）
+      const existingAnswerIdx = pre.findIndex(
+        (msg) => msg.id === finalMessageId,
+      );
+
+      if (existingAnswerIdx !== -1) {
+        // 情况1：已存在相同 ID 的答案消息，直接更新它（流更新）
+        const newMessages = pre.map((msg, idx) => {
+          if (idx === existingAnswerIdx) {
+            return {
+              ...msg,
+              content: answer.answer,
+              reference: answer.reference,
+              prompt: answer.prompt,
+              audio_binary: answer.audio_binary,
+              data: omit(answer, [
+                'answer',
+                'reference',
+                'prompt',
+                'audio_binary',
+              ]),
+            };
+          }
+          return msg;
+        });
+
+        if (newMessages.length > 200) {
+          const trimmed = newMessages.slice(-100);
+          console.debug(
+            '[Memory] Trimmed messages from',
+            newMessages.length,
+            'to',
+            trimmed.length,
+          );
+          return trimmed;
+        }
+
+        return newMessages;
+      }
+
+      // 获取当前最后一条消息
+      const lastMessage = pre[pre.length - 1];
+
+      // 检查最后一条消息是否是占位符消息（特征：ID 以 placeholder_ 开头）
+      const isLastMessagePlaceholder =
+        lastMessage?.role === MessageType.Assistant &&
+        typeof lastMessage?.id === 'string' &&
+        lastMessage.id.startsWith('placeholder_');
+
+      if (isLastMessagePlaceholder) {
+        // 情况2：最后一条消息是占位符消息，直接替换它
+        const newMessages = [
+          ...pre.slice(0, -1),
+          {
+            role: MessageType.Assistant,
+            content: answer.answer,
+            reference: answer.reference,
+            id: finalMessageId,
+            prompt: answer.prompt,
+            audio_binary: answer.audio_binary,
+            data: omit(answer, [
+              'answer',
+              'reference',
+              'prompt',
+              'audio_binary',
+            ]),
+          },
+        ];
+
+        if (newMessages.length > 200) {
+          const trimmed = newMessages.slice(-100);
+          console.debug(
+            '[Memory] Trimmed messages from',
+            newMessages.length,
+            'to',
+            trimmed.length,
+          );
+          return trimmed;
+        }
+
+        return newMessages;
+      }
+
+      // 情况3：最后一条消息不是占位符
+      // 检查倒数第二条是否是占位符（标准模式下可能是这样）
+      if (pre.length >= 2) {
+        const secondLast = pre[pre.length - 2];
+        const isSecondLastPlaceholder =
+          secondLast?.role === MessageType.Assistant &&
+          typeof secondLast?.id === 'string' &&
+          secondLast.id.startsWith('placeholder_');
+
+        if (isSecondLastPlaceholder) {
+          // 替换倒数第二条（占位符），保留最后一条（用户消息）
+          const newMessages = [
+            ...pre.slice(0, -2),
+            {
+              role: MessageType.Assistant,
+              content: answer.answer,
+              reference: answer.reference,
+              id: finalMessageId,
+              prompt: answer.prompt,
+              audio_binary: answer.audio_binary,
+              data: omit(answer, [
+                'answer',
+                'reference',
+                'prompt',
+                'audio_binary',
+              ]),
+            },
+            pre[pre.length - 1],
+          ];
+
+          if (newMessages.length > 200) {
+            const trimmed = newMessages.slice(-100);
+            console.debug(
+              '[Memory] Trimmed messages from',
+              newMessages.length,
+              'to',
+              trimmed.length,
+            );
+            return trimmed;
+          }
+
+          return newMessages;
+        }
+      }
+
+      // 情况4：没有占位符，直接追加新的答案消息
       const newMessages = [
-        ...(pre?.slice(0, -1) ?? []),
+        ...pre,
         {
           role: MessageType.Assistant,
           content: answer.answer,
           reference: answer.reference,
-          id: buildMessageUuid({
-            id: answer.id,
-            role: MessageType.Assistant,
-          }),
+          id: finalMessageId,
           prompt: answer.prompt,
           audio_binary: answer.audio_binary,
           data: omit(answer, ['answer', 'reference', 'prompt', 'audio_binary']),
         },
       ];
 
-      // 限制消息数量：超过200条时，只保留最近100条（保留第一条用户消息+最近99条）
       if (newMessages.length > 200) {
         const trimmed = newMessages.slice(-100);
         console.debug(
